@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { IMAGES } from '../assets/images';
 import { RankSheet, rankLine } from '../components/sheets';
-import { Bar, BtnP, BtnS, Coin, Frame, LinkBtn, Pix, Screen, T, Wordmark } from '../components/ui';
+import { Avatar, Bar, BtnP, BtnS, Coin, Frame, LinkBtn, Pix, Screen, T, Wordmark } from '../components/ui';
 import { COLORS } from '../constants/theme';
 import { PARTNERS, partnerById, xpIntoRank } from '../constants/partners';
 import { useApp } from '../state/store';
@@ -84,7 +84,7 @@ export default function Home() {
                 accessibilityLabel={p.name}
                 style={{ width: 40, alignItems: 'center' }}
               >
-                <Pix uri={IMAGES[`${p.portrait}-neutral`]} size={40} style={owned ? undefined : ({ filter: 'grayscale(1)', opacity: 0.7 } as object)} />
+                <Avatar stem={p.portrait} size={40} grey={!owned} />
                 {!owned ? (
                   <T x size={10}>
                     R{p.unlockRank}

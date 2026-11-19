@@ -80,6 +80,14 @@ const server = http.createServer((req, res) => {
   if (fs.existsSync(asHtml)) return sendFile(res, asHtml);
   const dirIndex = path.join(safe, 'index.html');
   if (fs.existsSync(dirIndex)) return sendFile(res, dirIndex);
+  // Unknown page: the app's 404 screen, with a real 404 status. Asset-looking
+  // paths (with an extension) get a plain 404 instead of HTML.
+  if (path.extname(urlPath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Not found');
+    return;
+  }
+  const notFound = path.join(ROOT, '+not-found.html');
+  if (fs.existsSync(notFound)) return sendFile(res, notFound, 404);
   return sendFile(res, path.join(ROOT, 'index.html'));
 });
 

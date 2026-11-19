@@ -341,6 +341,12 @@ export const Pix: React.FC<{ uri: string | undefined; size: number; h?: number; 
   />
 );
 
+/** Faded look for locked partners. A cream wash drawn over the image —
+ *  CSS filter: grayscale() makes iOS Safari drop pixel-art images entirely. */
+export const LockedWash: React.FC = () => (
+  <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: 'rgba(232,224,206,0.62)' }} />
+);
+
 export const portraitUri = (stem: string, mood: 'happy' | 'neutral' | 'wince' = 'neutral'): string =>
   IMAGES[`${stem}-${mood}`] ?? IMAGES[`${stem}-neutral`] ?? IMAGES['grandma-neutral'];
 
@@ -353,9 +359,10 @@ export const Avatar: React.FC<{
   grey?: boolean;
   label?: string;
 }> = ({ stem, size, mood, item, grey, label }) => (
-  <View style={{ width: size, height: size, opacity: grey ? 0.7 : 1, filter: grey ? 'grayscale(1)' : undefined } as ViewStyle}>
+  <View style={{ width: size, height: size }}>
     <Pix uri={portraitUri(stem, mood)} size={size} label={label} />
     {item && OVERLAYS[item] ? <Pix uri={OVERLAYS[item]} size={size} style={{ position: 'absolute', left: 0, top: 0 }} /> : null}
+    {grey ? <LockedWash /> : null}
   </View>
 );
 
@@ -471,7 +478,7 @@ export const Panel: React.FC<{ children: React.ReactNode; style?: StyleProp<View
           overflow: 'hidden',
           boxShadow: picked ? `0 0 0 4px ${pal.tomato}` : undefined,
         },
-        grey ? ({ filter: 'grayscale(1)', opacity: 0.7 } as ViewStyle) : null,
+        grey ? { opacity: 0.75 } : null,
         style,
       ]}
     >
