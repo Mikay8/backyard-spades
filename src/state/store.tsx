@@ -24,6 +24,7 @@ import {
   partnerById,
   rankForXp,
   type PartnerDef,
+  xpForRank,
 } from '../constants/partners';
 import { itemById } from '../constants/items';
 import { createGame, type DealResult, type GameState } from '../engine/game';
@@ -172,6 +173,9 @@ interface AppContextValue {
   equipItem: (itemId: string, partnerId: string) => void;
   /** Spend one Cheater's Mirror peek. */
   spendMirror: () => void;
+  /** Dev-only: jump to a rank for testing (Settings → Development).
+   *  No-op in production. Sets XP to the start of that rank. */
+  setRank: (rank: number) => void;
   setPicked: (partnerId: string) => void;
 }
 
@@ -402,6 +406,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [saveProfile],
   );
 
+  const setRank = useCallback(
+    (rank: number) => {
+      if (!DEV_UNLOCK_ALL) return;
+      const p = profileRef.current;
+      const xp = xpForRank(rank);
+      if (p.xp !== xp) saveProfile({ ...p, xp });
+    },
+    [saveProfile],
+  );
+
   const resetAll = useCallback(() => {
     saveProfile(INITIAL_PROFILE);
     setSettings(DEFAULT_SETTINGS);
@@ -432,9 +446,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       buyItem,
       equipItem,
       spendMirror,
+      setRank,
       setPicked,
     }),
-    [profile, settings, loaded, game, result, lastResult, startGame, setGame, finishGame, buyPartner, setFavourite, updateSettings, markTutorialDone, resetAll, buyItem, equipItem, spendMirror, setPicked],
+    [profile, settings, loaded, game, result, lastResult, startGame, setGame, finishGame, buyPartner, setFavourite, updateSettings, markTutorialDone, resetAll, buyItem, equipItem, spendMirror, setRank, setPicked],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

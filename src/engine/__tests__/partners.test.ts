@@ -5,6 +5,7 @@ import {
   STARTER_COINS,
   rankForXp,
   statTotal,
+  xpForRank,
   xpToNextRank,
 } from '../../constants/partners';
 
@@ -49,6 +50,14 @@ describe('rank math — brief §10', () => {
     expect(xpToNextRank(0)).toBe(100);
     expect(xpToNextRank(40)).toBe(60);
     expect(xpToNextRank(100)).toBe(100);
+  });
+  it('xpForRank is the inverse of rankForXp (dev rank chooser)', () => {
+    expect(xpForRank(1)).toBe(0);
+    expect(xpForRank(5)).toBe(400);
+    expect(xpForRank(15)).toBe(1400);
+    expect(rankForXp(xpForRank(10))).toBe(10);
+    expect(xpForRank(0)).toBe(0);
+    expect(xpForRank(99)).toBe(1400);
   });
   it('starter Coins are exactly enough for the first locked partner', () => {
     expect(STARTER_COINS).toBe(25);

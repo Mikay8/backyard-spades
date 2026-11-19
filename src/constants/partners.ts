@@ -187,6 +187,11 @@ export const rankForXp = (xp: number): number => 1 + Math.floor(Math.max(0, xp) 
 export const xpIntoRank = (xp: number): number => Math.max(0, xp) % 100;
 export const xpToNextRank = (xp: number): number => 100 - xpIntoRank(xp);
 
+/** XP at the start of a rank (rank 1 → 0, rank 15 → 1400). Used by the
+ *  dev-only rank chooser; ranks clamp to 1–15. */
+export const xpForRank = (rank: number): number =>
+  Math.max(0, Math.min(15, Math.max(1, Math.floor(rank))) - 1) * 100;
+
 export interface RankAdvantage {
   rank: number;
   label: string;

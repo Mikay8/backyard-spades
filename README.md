@@ -9,7 +9,7 @@ Design brief (the contract): `~/workspace/your_files/backyard-spades-design-spec
 ```bash
 npm install
 npx expo start --web        # web (fully playable)
-npm test                    # Jest — 54 tests
+npm test                    # Jest — 55 tests
 npm run typecheck           # tsc --noEmit
 npm run lint                # expo lint
 npm run build:web           # expo export --platform web → dist/
@@ -61,6 +61,12 @@ What it does (`src/constants/devmode.ts`, flag-gated, no in-app switch):
 - Coins display as ∞ on Home, Family, Shed, Result and the Buy sheet,
   with a purple "DEV BUILD - UNLIMITED COINS, ALL PARTNERS UNLOCKED"
   badge on Home, Pick, Family and Shed so the dev build is unmistakable.
+- **Rank choosing (Settings → Development, dev only):** a − / + stepper
+  plus Rank 1 / 5 / 10 / 15 jumps set your rank for testing (Rank 5: see
+  the partner's promise; Rank 10: favourite + review; Rank 15: table
+  themes + card backs). Implemented as `setRank` in the store (XP set to
+  the start of the chosen rank via `xpForRank`); it no-ops when the flag
+  is off, and the whole section renders only in the dev build.
 
 Why production is safe: Expo inlines `EXPO_PUBLIC_*` variables into the
 bundle at build time, and the production environment never sets this
