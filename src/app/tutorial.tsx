@@ -19,7 +19,7 @@
 //    keeps the payoff: your Ace of spades wins the round.
 import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { PromisePicker } from '../components/PromisePicker';
 import { Coach, Hand, PartnerRow, TableScene, TopBar, YouPanel, seatInfo } from '../components/Table';
 import { BtnP, BtnS, Pill, Screen, T } from '../components/ui';
@@ -37,6 +37,8 @@ const shortId = (c: Card): string => `${rankLabel(c.rank)}${c.suit}`;
 
 export default function Tutorial() {
   const { markTutorialDone, settings } = useApp();
+  // Short screens (phone browsers with their toolbars) get a tighter table.
+  const short = useWindowDimensions().height < 760;
   const [step, setStep] = useState(1);
   const [coach, setCoach] = useState(
     'This is Spades with a partner. You and Grandma Rose are one team. The other side is the other team.',
@@ -328,6 +330,7 @@ export default function Tutorial() {
   };
 
   const promised = teamPromise > 0;
+  const promising = step === 3 && showPromise;
   const spadesOpen = handsState.flat().filter((c) => c.suit === 'S').length < 13;
   const scoreUs = step === 10 && dealResult ? dealResult.usPoints : 0;
   const scoreThem = step === 10 && dealResult ? dealResult.themPoints : 0;
@@ -341,20 +344,23 @@ export default function Tutorial() {
   ];
 
   return (
-    <Screen scroll={false}>
+    <Screen contentStyle={{ paddingHorizontal: 0, paddingBottom: 0, flexGrow: 1 }}>
       <TopBar us={scoreUs} them={scoreThem} deal={1} onClose={() => router.replace('/')} />
       <PartnerRow
         name="Grandma Rose"
         stem="grandma"
         mood={lastWinner === PARTNER || lastWinner === YOU ? 'happy' : 'neutral'}
+        compact={short}
         info={seatInfo(promised ? 4 : null, seatWon[PARTNER], handsState[PARTNER].length, false)}
       />
-      <View style={{ position: 'relative' }}>
+      {promising ? null : (
+      <View>
         <TableScene
           left={seatInfo(promised ? 2 : null, seatWon[LEFT], handsState[LEFT].length, false)}
           right={seatInfo(promised ? 2 : null, seatWon[RIGHT], handsState[RIGHT].length, false)}
           plays={plays}
           winnerSeat={roundDone ? lastWinner : null}
+          maxH={short ? 190 : undefined}
         >
           {step === 1 ? (
             <>
@@ -401,8 +407,10 @@ export default function Tutorial() {
           tut
           action={canGotIt ? <BtnS label="Got it" size={14} onPress={onGotIt} style={{ width: 86, minHeight: 44, paddingHorizontal: 6, marginBottom: 0 }} /> : null}
         />
-        {step === 3 && showPromise ? (
-          <View style={{ position: 'absolute', left: 12, right: 12, bottom: 0 }}>
+      </View>
+      )}
+      {promising ? (
+          <View style={{ marginHorizontal: 12, marginBottom: 8 }}>
             <PromisePicker
               hand={myHand}
               partnerPromise={4}
@@ -429,7 +437,6 @@ export default function Tutorial() {
             />
           </View>
         ) : null}
-      </View>
 
       <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 12, gap: 6 }}>
         {step >= 2 ? (
@@ -463,8 +470,9 @@ export default function Tutorial() {
               Practice only — no Coins for this one.
             </T>
           </View>
-        ) : (
+        ) : promising ? null : (
           <YouPanel
+            compact={short}
             info={seatInfo(promised ? 3 : null, seatWon[YOU], myHand.length, false)}
             roundsLeft={Math.max(0, 13 - roundsPlayed)}
           />
