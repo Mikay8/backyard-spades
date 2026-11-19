@@ -1,6 +1,7 @@
 // Pick Your Partner — design canvas. Two-column card grid; sticky footer with
 // the picked partner and START GAME.
 import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '../navigation';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { PartnerCard } from '../components/PartnerCard';
@@ -32,7 +33,7 @@ export default function Pick() {
 
   return (
     <Screen
-      header={<Header title="PICK YOUR PARTNER" titleSize={13} subtitle="Who’s sitting across from you?" onBack={() => router.back()} />}
+      header={<Header title="PICK YOUR PARTNER" titleSize={13} subtitle="Who’s sitting across from you?" onBack={() => goBack()} />}
       contentStyle={{ paddingTop: 6, gap: 12 }}
       footer={
         <>
