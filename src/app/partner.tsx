@@ -62,7 +62,7 @@ export default function PartnerDetail() {
       <T size={14} style={{ opacity: 0.85 }}>
         {p.role}
       </T>
-      <T size={20} style={{ marginTop: 10, marginBottom: 14, lineHeight: 25 }}>
+      <T size={20} style={{ marginTop: 10, marginBottom: 14 }}>
         {p.quirk}
       </T>
       {item ? (

@@ -8,7 +8,7 @@ import { type Card, type Play } from '../engine/cards';
 import { Scaled, useColumnWidth } from './Scaled';
 import { Bar, CardBacks, Frame, IconBtn, PixelCard, Pix, T, promiseDots } from './ui';
 
-export const TopBar: React.FC<{ us: number; them: number; deal: number; onPause?: () => void; onClose?: () => void }> = ({ us, them, deal, onPause, onClose }) => (
+export const TopBar: React.FC<{ us: number; them: number; deal: number; target: number; onPause?: () => void; onClose?: () => void }> = ({ us, them, deal, target, onPause, onClose }) => (
   <View style={{ height: 60, paddingHorizontal: 12, paddingTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
     {onPause ? <IconBtn icon="pause" label="Pause" onPress={onPause} /> : onClose ? <IconBtn icon="close" label="Leave tutorial" onPress={onClose} /> : <View style={{ width: 44 }} />}
     <View style={{ flex: 1 }}>
@@ -16,15 +16,15 @@ export const TopBar: React.FC<{ us: number; them: number; deal: number; onPause?
         YOU {us} • THEM {them}
       </T>
       <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
-        <Bar pct={us / 5} height={10} style={{ flex: 1 }} label="You, toward 500" />
-        <Bar pct={them / 5} kind="them" height={10} style={{ flex: 1 }} label="Them, toward 500" />
+        <Bar pct={(100 * us) / target} height={10} style={{ flex: 1 }} label={`You, toward ${target}`} />
+        <Bar pct={(100 * them) / target} kind="them" height={10} style={{ flex: 1 }} label={`Them, toward ${target}`} />
       </View>
     </View>
     <View style={{ width: 62, alignItems: 'flex-end' }}>
       <T px size={9}>
         DEAL {deal}
       </T>
-      <T size={10}>to 500</T>
+      <T size={10}>to {target}</T>
     </View>
   </View>
 );
@@ -100,8 +100,8 @@ const OppSeat: React.FC<{ label: string; stem: string; info: SeatInfo; left: num
         padding: 3,
       }}
     >
-      <T size={11} center style={{ lineHeight: 14 }}>
-        <T x size={11}>
+      <T size={11} fixed center style={{ lineHeight: 14 }}>
+        <T x fixed size={11}>
           {label}
         </T>
         {`\nPromised ${info.promise}\nWon ${info.won}\n${info.cards} cards`}
@@ -203,14 +203,16 @@ export const YouPanel: React.FC<{ info: SeatInfo; roundsLeft: number; compact?: 
       <T x size={12}>
         YOU
       </T>
-      <T px size={12}>
+      <T px fixed size={12}>
         Promised {info.promise} • Won {info.won}
       </T>
       <T size={compact ? 14 : 20} style={{ letterSpacing: 3, minHeight: compact ? 0 : 26 }}>
         {info.dots}
       </T>
     </View>
-    <T size={13}>{roundsLeft} rounds left</T>
+    <T fixed size={12} center style={{ width: 64 }}>
+      {roundsLeft} rounds left
+    </T>
   </View>
 );
 

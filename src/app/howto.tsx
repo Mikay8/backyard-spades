@@ -9,7 +9,8 @@ import { BtnP, BtnS, Coin, Divider, Frame, Header, MiniCard, Pix, Screen, T, use
 import { COLORS } from '../constants/theme';
 import { ITEMS } from '../constants/items';
 import { PARTNERS, partnerById, stripLead } from '../constants/partners';
-import { useApp } from '../state/store';
+import { targetFor, useApp } from '../state/store';
+import { loseFloor } from '../engine/scoring';
 import { type Card } from '../engine/cards';
 
 const c = (suit: Card['suit'], rank: number): Card => ({ suit, rank });
@@ -68,7 +69,8 @@ const Row: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 export default function HowToPlay() {
-  const { profile } = useApp();
+  const { profile, settings } = useApp();
+  const target = targetFor(settings);
   const pal = usePalette();
   const pk = partnerById(profile.picked);
   return (
@@ -89,10 +91,10 @@ export default function HowToPlay() {
       <HP n={1} title="The goal" color="#c9432a">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <T px size={22} color={pal.tomato}>
-            500
+            {target}
           </T>
           <T size={14} style={{ flex: 1 }}>
-            Win the rounds you promised. First team to <T x>500 points</T> wins the game.
+            Win the rounds you promised. First team to <T x>{target} points</T> wins the game{settings.gameLength === 'quick' ? ' (Quick game — Classic is 500, change it in Settings)' : ''}.
           </T>
         </View>
         <Row>
@@ -210,7 +212,7 @@ export default function HowToPlay() {
           <HRow l="Goes zero but wins 1" r="−40" />
           <HRow l="8 extras banked, win 3 more" r="−100" />
         </View>
-        <T size={12}>With 8 extras banked and 3 more won, you lose 100 and 1 carries over. A team at −200 loses.</T>
+        <T size={12}>With 8 extras banked and 3 more won, you lose 100 and 1 carries over. A team at {loseFloor(target)} loses.</T>
       </HP>
 
       <HP n={6} title="Extras" color="#2f7d4a">

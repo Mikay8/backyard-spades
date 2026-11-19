@@ -50,14 +50,19 @@ export interface GameScores {
   them: number;
 }
 
-/** First to 500 wins; -200 loses. Both crossing 500 in one deal: higher wins. */
-export const gameWinner = (scores: GameScores): 'us' | 'them' | null => {
-  const usOut = scores.us <= -200;
-  const themOut = scores.them <= -200;
+/** Losing floor for a target: -200 for 500, -100 for 250. */
+export const loseFloor = (target: number): number => -Math.round((target * 0.4) / 50) * 50;
+
+/** First to `target` (500 classic, 250 quick) wins; falling to the floor
+ *  loses. Both crossing the target in one deal: higher wins. */
+export const gameWinner = (scores: GameScores, target = 500): 'us' | 'them' | null => {
+  const floor = loseFloor(target);
+  const usOut = scores.us <= floor;
+  const themOut = scores.them <= floor;
   if (usOut && themOut) return scores.us > scores.them ? 'us' : 'them';
   if (usOut) return 'them';
   if (themOut) return 'us';
-  if (scores.us >= 500 || scores.them >= 500) {
+  if (scores.us >= target || scores.them >= target) {
     if (scores.us === scores.them) return null; // tie — one more deal
     return scores.us > scores.them ? 'us' : 'them';
   }

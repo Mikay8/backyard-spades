@@ -8,6 +8,10 @@ import { BtnS, Header, Screen, Sheet, T, Toggle, usePalette } from '../component
 import { COLORS } from '../constants/theme';
 import { useApp } from '../state/store';
 
+const GAME_LENGTHS = [
+  { id: 'quick', label: 'Quick — 250' },
+  { id: 'classic', label: 'Classic — 500' },
+] as const;
 const TABLE_THEMES = [
   { id: 'check', label: 'Picnic Check' },
   { id: 'grass', label: 'Grass' },
@@ -114,6 +118,17 @@ export default function Settings() {
         </Sheet>
       }
     >
+      <H t="Game" />
+      <Choice
+        t="Game length"
+        options={GAME_LENGTHS}
+        value={settings.gameLength}
+        onPick={(id) => updateSettings({ gameLength: id as typeof settings.gameLength })}
+      />
+      <T size={12} style={{ paddingBottom: 6 }}>
+        {settings.gameLength === 'quick' ? 'Quick: first to 250 wins — about half as many deals.' : 'Classic: first to 500 wins.'} Applies to your next game.
+      </T>
+
       <H t="Sound" />
       <Toggle label="Sound" sub="Mutes all game sounds" value={settings.sound} onChange={(v) => updateSettings({ sound: v })} />
       {settings.sound ? <Toggle label="Card sounds" sub="Slide and table tap" value={settings.cardSounds} onChange={(v) => updateSettings({ cardSounds: v })} /> : null}

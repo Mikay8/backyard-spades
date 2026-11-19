@@ -38,6 +38,9 @@ export const usePalette = () => {
 
 // ───────────────────────────── Text
 
+/** App-wide text size boost (sizes in code are the design's; this scales them up). */
+export const TEXT_SCALE = 1.12;
+
 export const T: React.FC<
   TextProps & {
     px?: boolean;
@@ -45,10 +48,13 @@ export const T: React.FC<
     x?: boolean;
     color?: string;
     center?: boolean;
+    /** Keep the exact size (text inside cards and other fixed-size boxes). */
+    fixed?: boolean;
     style?: StyleProp<TextStyle>;
   }
-> = ({ px, size, x, color, center, style, children, ...rest }) => {
-  const fs = size ?? (px ? 12 : 14);
+> = ({ px, size, x, color, center, fixed, style, children, ...rest }) => {
+  const base = size ?? (px ? 12 : 14);
+  const fs = fixed ? base : Math.round(base * TEXT_SCALE);
   return (
     <Text
       {...rest}
@@ -427,7 +433,7 @@ export const Pill: React.FC<{ label: string; open?: boolean; style?: StyleProp<V
       style,
     ]}
   >
-    <T x size={12} numberOfLines={1}>
+    <T x fixed size={12} numberOfLines={1}>
       {label}
     </T>
   </View>
@@ -631,7 +637,7 @@ export const PixelCard: React.FC<{
       ]}
     >
       <View style={{ position: 'absolute', left: 3, top: 3, width: 20 * scale, alignItems: 'center', gap: 2 }}>
-        <T px size={11 * scale} color={isRed(card) ? COLORS.cardRed : COLORS.ink} style={{ letterSpacing: -1, lineHeight: 12 * scale }}>
+        <T px fixed size={11 * scale} color={isRed(card) ? COLORS.cardRed : COLORS.ink} style={{ letterSpacing: -1, lineHeight: 12 * scale }}>
           {rankLabel(card.rank)}
         </T>
         <SuitImg suit={card.suit} size={18 * scale} />
@@ -666,7 +672,7 @@ export const MiniCard: React.FC<{ card: Card; win?: boolean; tiny?: boolean }> =
     }}
     accessibilityLabel={`${rankLabel(card.rank)} of ${SUIT_NAME[card.suit]}`}
   >
-    <T px size={tiny ? 8 : 10} color={isRed(card) ? COLORS.cardRed : COLORS.ink} style={{ letterSpacing: -1 }}>
+    <T px fixed size={tiny ? 8 : 10} color={isRed(card) ? COLORS.cardRed : COLORS.ink} style={{ letterSpacing: -1 }}>
       {rankLabel(card.rank)}
     </T>
     <SuitImg suit={card.suit} size={tiny ? 12 : 16} />
