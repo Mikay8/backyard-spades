@@ -1,0 +1,205 @@
+// Partners, rank, Coins — brief §§9–10 (exact). Every partner totals 18.
+export type StatKey =
+  | 'bidsBig'
+  | 'savesSpades'
+  | 'wontSteal'
+  | 'avoidsExtras'
+  | 'lovesZero'
+  | 'leadsStrong';
+
+export const STAT_LABELS: Record<StatKey, string> = {
+  bidsBig: 'Bids Big',
+  savesSpades: 'Saves Spades',
+  wontSteal: "Won't Steal Your Win",
+  avoidsExtras: 'Avoids Extras',
+  lovesZero: 'Loves Going Zero',
+  leadsStrong: 'Leads Strong',
+};
+
+export const STAT_ORDER: StatKey[] = [
+  'bidsBig',
+  'savesSpades',
+  'wontSteal',
+  'avoidsExtras',
+  'lovesZero',
+  'leadsStrong',
+];
+
+export type Stats = Record<StatKey, number>;
+
+export interface PartnerDef {
+  id: string;
+  name: string;
+  role: string;
+  quirk: string;
+  goodWith: string;
+  watchOut: string;
+  stats: Stats;
+  /** Rank needed before this partner can be bought. 0 = free starter. */
+  unlockRank: number;
+  /** Coins to buy once the rank is reached. 0 = free. */
+  price: number;
+  /** Portrait file stem in assets/images (p- prefix) or grandma- prefix. */
+  portrait: string;
+  /** Quirk icon file stem (i- prefix). */
+  icon: string;
+}
+
+export const PARTNERS: PartnerDef[] = [
+  {
+    id: 'grandma',
+    name: 'Grandma Rose',
+    role: 'The Steady One',
+    quirk: 'Forgot her glasses again.',
+    goodWith: 'Good with you if you promise big yourself — she never steals your win.',
+    watchOut: 'Watch out: she leads low every time and leaves points on the table.',
+    stats: { bidsBig: 2, savesSpades: 3, wontSteal: 5, avoidsExtras: 5, lovesZero: 1, leadsStrong: 2 },
+    unlockRank: 0,
+    price: 0,
+    portrait: 'grandma',
+    icon: 'i-glasses',
+  },
+  {
+    id: 'dre',
+    name: 'Uncle Dre',
+    role: 'Overconfident',
+    quirk: 'Bids big and plays bold. Sometimes too bold.',
+    goodWith: 'Good with you if your hand is strong — he leads strong and plays bold.',
+    watchOut: 'Watch out: he promises 4 when he has 3, and sometimes takes a round you had covered.',
+    stats: { bidsBig: 5, savesSpades: 3, wontSteal: 2, avoidsExtras: 2, lovesZero: 2, leadsStrong: 4 },
+    unlockRank: 0,
+    price: 0,
+    portrait: 'p-dre',
+    icon: 'i-stache',
+  },
+  {
+    id: 'marcus',
+    name: 'Cousin Marcus',
+    role: 'The Calculator',
+    quirk: 'Counts every card out loud.',
+    goodWith: 'Good with you if you want a safe, steady game — he never wastes a spade.',
+    watchOut: 'Watch out: slow, safe, never flashy — no big swings.',
+    stats: { bidsBig: 3, savesSpades: 5, wontSteal: 3, avoidsExtras: 4, lovesZero: 1, leadsStrong: 2 },
+    unlockRank: 3,
+    price: 25,
+    portrait: 'p-marcus',
+    icon: 'i-notebook',
+  },
+  {
+    id: 'theo',
+    name: 'Big Brother Theo',
+    role: 'Plays Spades Early',
+    quirk: 'Slams his spades down fast.',
+    goodWith: 'Good with you if you want spades out early and the table opened up.',
+    watchOut: 'Watch out: he burns spades you might have needed later.',
+    stats: { bidsBig: 4, savesSpades: 1, wontSteal: 2, avoidsExtras: 3, lovesZero: 3, leadsStrong: 5 },
+    unlockRank: 5,
+    price: 60,
+    portrait: 'p-theo',
+    icon: 'i-tongs',
+  },
+  {
+    id: 'june',
+    name: 'Auntie June',
+    role: 'Loves Going Zero',
+    quirk: "'I got nothing' — and she means it.",
+    goodWith: 'Good with you if you like huge swing games — she will go zero when she can.',
+    watchOut: 'Watch out: terrible if you just want a safe win.',
+    stats: { bidsBig: 3, savesSpades: 4, wontSteal: 2, avoidsExtras: 1, lovesZero: 5, leadsStrong: 3 },
+    unlockRank: 8,
+    price: 60,
+    portrait: 'p-june',
+    icon: 'i-sunhat',
+  },
+  {
+    id: 'mom',
+    name: 'Mom',
+    role: 'The Bold Cover',
+    quirk: 'Never steals your win — and leads strong.',
+    goodWith: 'Good with you if you promise big and want cover plus pressure.',
+    watchOut: 'Watch out: her strong leads can cost you extras.',
+    stats: { bidsBig: 3, savesSpades: 3, wontSteal: 5, avoidsExtras: 2, lovesZero: 1, leadsStrong: 4 },
+    unlockRank: 10,
+    price: 120,
+    portrait: 'p-mom',
+    icon: 'i-lemonade',
+  },
+  {
+    id: 'dad',
+    name: 'Dad',
+    role: 'Hates Extras',
+    quirk: 'Wins by a little, never by too much.',
+    goodWith: 'Good with you when the game is tight and extras would cost you.',
+    watchOut: 'Watch out: big wins are rare with him.',
+    stats: { bidsBig: 2, savesSpades: 3, wontSteal: 4, avoidsExtras: 5, lovesZero: 2, leadsStrong: 2 },
+    unlockRank: 12,
+    price: 120,
+    portrait: 'p-dad',
+    icon: 'i-clover',
+  },
+  {
+    id: 'mae',
+    name: 'Little Sister Mae',
+    role: 'The Big Swing',
+    quirk: 'Huge wins or big misses, never in the middle.',
+    goodWith: 'Good with you if you like high-risk games.',
+    watchOut: 'Watch out: the most volatile partner — a bad hand with Mae is a big loss.',
+    stats: { bidsBig: 5, savesSpades: 3, wontSteal: 2, avoidsExtras: 1, lovesZero: 4, leadsStrong: 3 },
+    unlockRank: 15,
+    price: 120,
+    portrait: 'p-mae',
+    icon: 'i-chicken',
+  },
+];
+
+export const partnerById = (id: string): PartnerDef =>
+  PARTNERS.find((p) => p.id === id) ?? PARTNERS[0];
+
+export const statTotal = (p: PartnerDef): number =>
+  STAT_ORDER.reduce((sum, k) => sum + p.stats[k], 0);
+
+/** The two AI opponents — brief §9.1: balanced 3s, no quirks, no partner names.
+ *  Opponent identity was open (§21); chosen here as a proposal: Bill on the
+ *  left, a Neighbour on the right. Bill + the two neighbour portraits are the
+ *  assets Mikayla supplied; p-nbrL-neutral is used in the How to Play table
+ *  diagram as the left opponent illustration. */
+export interface OpponentDef {
+  id: 'bill' | 'neighbour';
+  name: string;
+  portrait: string;
+}
+
+export const OPPONENTS: OpponentDef[] = [
+  { id: 'bill', name: 'Bill', portrait: 'bill' },
+  { id: 'neighbour', name: 'Neighbour', portrait: 'p-nbrR' },
+];
+
+/** Rank + Coins — brief §10 (exact). */
+export const STARTER_COINS = 25;
+export const WIN_XP = 100;
+export const LOSS_XP = 25;
+export const GO_ZERO_WIN_XP_BONUS = 50;
+export const WIN_COINS = 20;
+export const LOSS_COINS = 5;
+export const GO_ZERO_WIN_COINS_BONUS = 10;
+
+export const rankForXp = (xp: number): number => 1 + Math.floor(Math.max(0, xp) / 100);
+export const xpIntoRank = (xp: number): number => Math.max(0, xp) % 100;
+export const xpToNextRank = (xp: number): number => 100 - xpIntoRank(xp);
+
+export interface RankAdvantage {
+  rank: number;
+  label: string;
+}
+
+export const RANK_ADVANTAGES: RankAdvantage[] = [
+  { rank: 3, label: 'Cousin Marcus is ready to buy (25 Coins)' },
+  { rank: 5, label: 'Big Brother Theo is ready to buy (60 Coins) + See the promise' },
+  { rank: 8, label: 'Auntie June is ready to buy (60 Coins)' },
+  { rank: 10, label: 'Mom is ready to buy (120 Coins) + Favourite partner + partner review' },
+  { rank: 12, label: 'Dad is ready to buy (120 Coins)' },
+  { rank: 15, label: 'Little Sister Mae is ready to buy (120 Coins) + Table themes' },
+];
+
+export const nextUnlockAfter = (rank: number): PartnerDef | null =>
+  PARTNERS.filter((p) => p.unlockRank > rank).sort((a, b) => a.unlockRank - b.unlockRank)[0] ?? null;

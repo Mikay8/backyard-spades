@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#B03420",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "package": "game.backyardspades.app"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "icon": "./assets/icon.png",
+    "ios": {
+      "bundleIdentifier": "game.backyardspades.app",
+      "icon": "./assets/icon.png",
+      "supportsTablet": false
+    },
+    "name": "Backyard Spades",
+    "orientation": "portrait",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFF8E7",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
+    ],
+    "scheme": "backyard-spades",
+    "slug": "backyard-spades",
+    "userInterfaceStyle": "light",
+    "version": "1.0.0",
+    "web": {
+      "backgroundColor": "#FFF8E7",
+      "description": "Backyard Spades \u2014 pick a family partner, promise your rounds, win the backyard. Points only, no real-money gambling.",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Backyard Spades",
+      "output": "static",
+      "shortName": "Backyard Spades",
+      "themeColor": "#3E7A4E"
+    }
+  }
+}
