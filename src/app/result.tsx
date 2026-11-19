@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { TextInput, View } from 'react-native';
 import { BuySheet, InkLine, rankLine } from '../components/sheets';
-import { Avatar, Bar, BtnP, BtnS, Coin, Frame, IconBtn, Note, Panel, Screen, Sheet, T, Toast } from '../components/ui';
+import { Avatar, Bar, BtnP, BtnS, Coin, Frame, IconBtn, Note, Panel, Screen, Sheet, T, Toast, coinsText } from '../components/ui';
 import { COLORS, FONT } from '../constants/theme';
 import { partnerById, xpIntoRank } from '../constants/partners';
 import { useApp } from '../state/store';
@@ -162,7 +162,7 @@ export default function Result() {
           +{res.coinsEarned} Coins
         </T>
         <T size={13} style={{ opacity: 0.8 }}>
-          → {profile.coins} Coins
+          → {coinsText(profile.coins)} Coins
         </T>
       </View>
       <View>

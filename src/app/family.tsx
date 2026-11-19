@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Lock } from '../components/PartnerCard';
 import { BuySheet } from '../components/sheets';
-import { BtnS, Coin, Frame, Header, Panel, Screen, T, Toast } from '../components/ui';
+import { BtnS, Coin, DevBadge, Frame, Header, Panel, Screen, T, Toast, coinsText } from '../components/ui';
 import { PARTNERS, partnerById } from '../constants/partners';
 import { useApp } from '../state/store';
 
@@ -28,7 +28,7 @@ export default function Family() {
               <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
                 <Coin />
                 <T x size={13}>
-                  {profile.coins} Coins
+                  {coinsText(profile.coins)} Coins
                 </T>
               </View>
               <T x size={13}>
@@ -50,6 +50,7 @@ export default function Family() {
         </>
       }
     >
+      <DevBadge />
       {allOwned ? (
         <T x size={14}>
           The whole family is here.

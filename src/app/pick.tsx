@@ -8,7 +8,7 @@ import { Pressable, ScrollView, View, type NativeScrollEvent, type NativeSynthet
 import { useColumnWidth } from '../components/Scaled';
 import { PartnerCard } from '../components/PartnerCard';
 import { BuySheet } from '../components/sheets';
-import { Avatar, BtnP, Header, Screen, T, Toast, usePalette } from '../components/ui';
+import { Avatar, BtnP, DevBadge, Header, Screen, T, Toast, usePalette } from '../components/ui';
 import { COLORS } from '../constants/theme';
 import { PARTNERS, partnerById } from '../constants/partners';
 import { useApp } from '../state/store';
@@ -123,6 +123,9 @@ export default function Pick() {
         </>
       }
     >
+      <View style={{ paddingHorizontal: 16 }}>
+        <DevBadge />
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16 }}>
         <Arrow dir={-1} off={index === 0} onPress={() => goTo(index - 1)} />
         <View style={{ flex: 1, alignItems: 'center' }}>

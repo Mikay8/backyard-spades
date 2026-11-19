@@ -3,7 +3,7 @@ import { goBack } from '../navigation';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { IMAGES } from '../assets/images';
-import { Avatar, BtnS, Coin, Frame, Header, Panel, Pix, Screen, T, Toast } from '../components/ui';
+import { Avatar, BtnS, Coin, DevBadge, Frame, Header, Panel, Pix, Screen, T, Toast, coinsText } from '../components/ui';
 import { ITEMS, partnerFirstName } from '../constants/items';
 import { STAT_LABELS, partnerById } from '../constants/partners';
 import { useApp } from '../state/store';
@@ -29,7 +29,7 @@ export default function Shed() {
               <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
                 <Coin />
                 <T x size={13}>
-                  {profile.coins} Coins
+                  {coinsText(profile.coins)} Coins
                 </T>
               </View>
             }
@@ -48,6 +48,7 @@ export default function Shed() {
       contentStyle={{ gap: 10, paddingBottom: 20 }}
       overlay={<Toast text={toast} />}
     >
+      <DevBadge />
       {ITEMS.map((it) => {
         const own = it.once ? profile.mirror > 0 : !!profile.items[it.id];
         const on = !it.once && profile.equip[pk.id] === it.id;
