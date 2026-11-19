@@ -1,10 +1,39 @@
-// Promise picker — brief §12.3.2. Numbers 0–13; 0 is "Go zero".
+// Promise picker — design canvas floating promise sheet. 1–13 grid, a
+// dashed "Go zero" bar, live help for the tapped number, team total.
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { COLORS } from '../constants/theme';
 import { likelyWinnersHint } from '../engine/ai';
 import { type Card } from '../engine/cards';
-import { Btn, styles } from './ui';
+import { BtnP, T, usePalette } from './ui';
+
+const Num: React.FC<{ n: number; on: boolean; onPress: () => void; hint?: boolean }> = ({ n, on, onPress, hint }) => {
+  const pal = usePalette();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Promise ${n} rounds`}
+      accessibilityState={{ selected: on }}
+      style={{
+        width: 42,
+        height: 42,
+        borderWidth: 3,
+        borderColor: hint && !on ? pal.tomato : COLORS.ink,
+        backgroundColor: on ? pal.tomato : COLORS.paper,
+        borderRadius: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: on ? 'none' : `0 3px 0 ${COLORS.ink}`,
+        transform: [{ translateY: on ? 3 : 0 }],
+      }}
+    >
+      <T px size={12} color={on ? '#fff' : COLORS.ink}>
+        {n}
+      </T>
+    </Pressable>
+  );
+};
 
 export const PromisePicker: React.FC<{
   hand: Card[];
@@ -16,89 +45,89 @@ export const PromisePicker: React.FC<{
   /** Tutorial mode: only `suggested` is the right answer; other taps show hints. */
   suggested?: number;
   onWrongTap?: (n: number) => void;
-}> = ({ hand, partnerPromise, partnerName, seePartnerPromise, opponentPromises, onConfirm, suggested, onWrongTap }) => {
+  /** Tutorial coaching line shown in place of the computed help. */
+  helpOverride?: string;
+}> = ({ hand, partnerPromise, partnerName, seePartnerPromise, opponentPromises, onConfirm, suggested, onWrongTap, helpOverride }) => {
+  const pal = usePalette();
   const [picked, setPicked] = useState<number | null>(null);
   const likely = likelyWinnersHint(hand);
-  const hintFor = (n: number): string => {
-    if (n === 0) return 'Go zero is +100 if you win none, -100 if you win even one.';
-    if (n === likely) return `${n} is a good promise with this hand.`;
-    if (n < likely) return `${n} is safe with this hand — you have about ${likely} likely winners.`;
-    return `${n} is bold — you have about ${likely} likely winners.`;
+  const tap = (n: number) => {
+    if (suggested !== undefined && n !== suggested) {
+      onWrongTap?.(n);
+      return;
+    }
+    setPicked(n);
   };
-  const teamTotal = (picked ?? 0) + (seePartnerPromise && partnerPromise !== null ? partnerPromise : 0);
+  const help =
+    helpOverride ??
+    (picked === null
+      ? 'Tap a number to see how it looks with your hand.'
+      : picked === 0
+        ? 'Go zero is +100 if you win none, -100 if you win even one.'
+        : picked <= likely
+          ? `${picked} is safe with this hand.`
+          : `${picked} is bold — you have about ${likely} likely winners.`);
+  const otherSide = opponentPromises.reduce((s, o) => s + o.promise, 0);
+  const partnerKnown = seePartnerPromise && partnerPromise !== null;
+  const team = picked !== null && partnerKnown ? picked + (partnerPromise ?? 0) : null;
+
   return (
-    <View style={[styles.card, { marginTop: 12 }]}>
-      <Text style={{ fontSize: 19, fontWeight: '800', color: COLORS.ink }}>How many rounds will you win?</Text>
-      <Text style={styles.small}>Count the cards you think will win. Spades beat everything.</Text>
-
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
-        {Array.from({ length: 14 }).map((_, n) => (
-          <Pressable
-            key={n}
-            onPress={() => {
-              if (suggested !== undefined && n !== suggested) {
-                onWrongTap?.(n);
-                return;
-              }
-              setPicked(n);
-            }}
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 12,
-              margin: 4,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: picked === n ? COLORS.accent : n === 0 ? '#F5E6D3' : COLORS.cream,
-              borderWidth: picked === n ? 0 : 2,
-              borderColor: n === suggested ? COLORS.accent : COLORS.line,
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={n === 0 ? 'Go zero — win zero rounds' : `Promise ${n} rounds`}
-          >
-            <Text style={{ fontSize: 20, fontWeight: '800', color: picked === n ? '#fff' : COLORS.ink }}>
-              {n}
-            </Text>
-            {n === 0 ? <Text style={{ fontSize: 9, color: picked === n ? '#fff' : COLORS.inkSoft }}>GO ZERO</Text> : null}
-          </Pressable>
+    <View
+      style={{
+        backgroundColor: COLORS.paper,
+        borderWidth: 4,
+        borderColor: COLORS.ink,
+        borderRadius: 18,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        boxShadow: '0 -6px 0 rgba(29,42,68,0.18)',
+        gap: 6,
+      }}
+    >
+      <T x size={18} accessibilityRole="header">
+        How many rounds will you win?
+      </T>
+      <T size={12}>
+        {partnerKnown ? `${partnerName} promised ${partnerPromise}` : `${partnerName} will promise after you`}
+        {'\n'}The other side promised {otherSide} together
+      </T>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+        {Array.from({ length: 13 }).map((_, i) => (
+          <Num key={i + 1} n={i + 1} on={picked === i + 1} hint={suggested === i + 1} onPress={() => tap(i + 1)} />
         ))}
       </View>
-
-      {picked !== null ? (
-        <Text style={[styles.body, { marginTop: 8 }]}>{hintFor(picked)}</Text>
-      ) : (
-        <Text style={[styles.body, { marginTop: 8 }]}>You have about {likely} likely winners in this hand.</Text>
-      )}
-
-      <View style={{ marginTop: 10 }}>
-        <Text style={styles.body}>
-          {seePartnerPromise && partnerPromise !== null
-            ? `${partnerName} promised ${partnerPromise}.`
-            : `${partnerName} will promise after you.`}
-        </Text>
-        {opponentPromises.map((o) => (
-          <Text key={o.name} style={styles.body}>
-            {o.name} promised {o.promise}.
-          </Text>
-        ))}
-        {picked !== null && seePartnerPromise ? (
-          <Text style={[styles.body, { fontWeight: '800', marginTop: 4 }]}>
-            Together you promised {teamTotal}.
-          </Text>
-        ) : null}
-      </View>
-
-      <Btn
-        label={picked === null ? 'Pick a number first' : picked === 0 ? 'Go zero' : `Promise ${picked}`}
-        primary
+      <Pressable
+        onPress={() => tap(0)}
+        accessibilityRole="button"
+        accessibilityLabel="Go zero — win zero rounds"
+        accessibilityState={{ selected: picked === 0 }}
+        style={{
+          height: 40,
+          borderWidth: 3,
+          borderStyle: 'dashed',
+          borderColor: COLORS.ink,
+          borderRadius: 6,
+          backgroundColor: picked === 0 ? pal.tomato : COLORS.paper,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 2,
+        }}
+      >
+        <T x size={14} color={picked === 0 ? '#fff' : COLORS.ink}>
+          Go zero — win zero rounds
+        </T>
+      </Pressable>
+      <T x size={13} style={{ minHeight: 34 }}>
+        {help}
+      </T>
+      {team !== null ? <T size={13}>Together you promised {team}</T> : null}
+      <BtnP
+        label={picked === null ? 'Pick a number' : picked === 0 ? 'Go zero' : `Promise ${picked}`}
+        size={13}
         disabled={picked === null}
         onPress={() => picked !== null && onConfirm(picked)}
         testID="confirm-promise"
       />
-      <Text style={[styles.small, { marginTop: 6 }]}>
-        You can&rsquo;t change your promise after you confirm it.
-      </Text>
-      <Text style={[styles.small, { marginTop: 2 }]}>Aces and high spades usually win a round.</Text>
     </View>
   );
 };

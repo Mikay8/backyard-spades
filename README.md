@@ -17,6 +17,9 @@ npm run build:web           # expo export --platform web → dist/
 
 ## What's in v1
 
+- Visual design: the "Family Card Night — 16-bit Pixel Art" design canvas — Press Start 2P + Nunito, ink outlines with hard shadows, wood-framed pixel portraits, pixel playing cards, phone-width layout centred on wide screens. Shared kit in `src/components/ui.tsx`, table pieces in `src/components/Table.tsx`.
+- The Shed (`/shed`): buy items with Coins, equip one per partner (+1 to one or two stats, shown as ◆ and drawn on the portrait); Cheater's Mirror gives a one-time peek at every hand in a game. Partner detail screen (`/partner`). Item stat boosts are display-only — the AI still plays from base stats.
+
 - Home, Pick Your Partner (8 family partners), Game Table (first to 500, deals of 13 rounds), Deal-Score sheet, Game Result (Coins + XP + rank, share text), Interactive Tutorial (Steps 1–10, fixed example deal), How to Play, Family, Settings, Rank detail.
 - Scoring exactly per brief §8; partner quirks are deterministic rules, not luck; rank + Coins exactly per §10; plain language per §11 (promise / round / "Spades beat everything" / extras / go zero).
 - Opponents: Bill (left) and a Neighbour (right) — proposal, brief §21 left opponent identity open.

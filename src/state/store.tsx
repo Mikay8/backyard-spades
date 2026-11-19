@@ -24,6 +24,7 @@ import {
   rankForXp,
   type PartnerDef,
 } from '../constants/partners';
+import { itemById } from '../constants/items';
 import { createGame, type DealResult, type GameState } from '../engine/game';
 
 const PROFILE_KEY = 'backyard:profile-v1';
@@ -48,6 +49,14 @@ export interface Profile {
   gamesWithPartner: Record<string, { played: number; won: number }>;
   lastGame: LastGame | null;
   tutorialDone: boolean;
+  /** Shed items owned (id → true). */
+  items: Record<string, boolean>;
+  /** Equipped item per partner (partnerId → itemId). One item per partner. */
+  equip: Record<string, string>;
+  /** Cheater's Mirror peeks left. */
+  mirror: number;
+  /** Partner currently picked (Home, Pick, Shed equip target). */
+  picked: string;
 }
 
 export const EMPTY_PROFILE: Profile = {
@@ -60,6 +69,10 @@ export const EMPTY_PROFILE: Profile = {
   gamesWithPartner: {},
   lastGame: null,
   tutorialDone: false,
+  items: {},
+  equip: {},
+  mirror: 0,
+  picked: 'grandma',
 };
 
 export interface Settings {
@@ -135,6 +148,13 @@ interface AppContextValue {
   updateSettings: (patch: Partial<Settings>) => void;
   markTutorialDone: () => void;
   resetAll: () => void;
+  /** Buy a Shed item. Returns false when short of Coins. */
+  buyItem: (itemId: string) => boolean;
+  /** Equip (or take off, if already on) an item on a partner. */
+  equipItem: (itemId: string, partnerId: string) => void;
+  /** Spend one Cheater's Mirror peek. */
+  spendMirror: () => void;
+  setPicked: (partnerId: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -305,6 +325,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     saveProfile({ ...p, tutorialDone: true });
   }, [saveProfile]);
 
+  const buyItem = useCallback(
+    (itemId: string): boolean => {
+      const p = profileRef.current;
+      const item = itemById(itemId);
+      if (!item || p.coins < item.price) return false;
+      if (item.once) {
+        saveProfile({ ...p, coins: p.coins - item.price, mirror: p.mirror + 1 });
+        return true;
+      }
+      if (p.items[itemId]) return true;
+      saveProfile({ ...p, coins: p.coins - item.price, items: { ...p.items, [itemId]: true } });
+      return true;
+    },
+    [saveProfile],
+  );
+
+  const equipItem = useCallback(
+    (itemId: string, partnerId: string) => {
+      const p = profileRef.current;
+      if (!p.items[itemId]) return;
+      const equip = { ...p.equip };
+      if (equip[partnerId] === itemId) {
+        delete equip[partnerId];
+      } else {
+        // An item sits on one partner at a time.
+        for (const k of Object.keys(equip)) if (equip[k] === itemId) delete equip[k];
+        equip[partnerId] = itemId;
+      }
+      saveProfile({ ...p, equip });
+    },
+    [saveProfile],
+  );
+
+  const spendMirror = useCallback(() => {
+    const p = profileRef.current;
+    if (p.mirror > 0) saveProfile({ ...p, mirror: p.mirror - 1 });
+  }, [saveProfile]);
+
+  const setPicked = useCallback(
+    (partnerId: string) => {
+      const p = profileRef.current;
+      if (p.owned.includes(partnerId) && p.picked !== partnerId) saveProfile({ ...p, picked: partnerId });
+    },
+    [saveProfile],
+  );
+
   const resetAll = useCallback(() => {
     saveProfile(EMPTY_PROFILE);
     setSettings(DEFAULT_SETTINGS);
@@ -331,8 +397,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateSettings,
       markTutorialDone,
       resetAll,
+      buyItem,
+      equipItem,
+      spendMirror,
+      setPicked,
     }),
-    [profile, settings, loaded, game, result, lastResult, startGame, setGame, finishGame, buyPartner, setFavourite, updateSettings, markTutorialDone, resetAll],
+    [profile, settings, loaded, game, result, lastResult, startGame, setGame, finishGame, buyPartner, setFavourite, updateSettings, markTutorialDone, resetAll, buyItem, equipItem, spendMirror, setPicked],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

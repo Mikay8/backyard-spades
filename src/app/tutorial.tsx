@@ -19,9 +19,10 @@
 //    keeps the payoff: your Ace of spades wins the round.
 import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { PromisePicker } from '../components/PromisePicker';
-import { Btn, PlayingCard, Portrait, PromiseDots, styles } from '../components/ui';
+import { Coach, Hand, PartnerRow, TableScene, TopBar, YouPanel, seatInfo } from '../components/Table';
+import { BtnP, BtnS, Pill, Screen, T } from '../components/ui';
 import { COLORS } from '../constants/theme';
 import { useApp } from '../state/store';
 import { chooseCard } from '../engine/ai';
@@ -34,15 +35,8 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 /** Short code for a card, e.g. 'QH', 'AS', '10D'. */
 const shortId = (c: Card): string => `${rankLabel(c.rank)}${c.suit}`;
 
-const SEAT_NAME: Record<number, string> = {
-  [YOU]: 'You',
-  [LEFT]: 'Left',
-  [PARTNER]: 'Grandma Rose',
-  [RIGHT]: 'Right',
-};
-
 export default function Tutorial() {
-  const { markTutorialDone } = useApp();
+  const { markTutorialDone, settings } = useApp();
   const [step, setStep] = useState(1);
   const [coach, setCoach] = useState(
     'This is Spades with a partner. You and Grandma Rose are one team. The other side is the other team.',
@@ -64,7 +58,23 @@ export default function Tutorial() {
   const [, setVersion] = useState(0);
   const bump = () => setVersion((v) => v + 1);
 
+  const seatWonRef = useRef([0, 0, 0, 0]);
+  const [seatWon, setSeatWon] = useState([0, 0, 0, 0]);
+  const [lastWinner, setLastWinner] = useState<number | null>(null);
+  const credit = (winner: number) => {
+    if (winner === YOU || winner === PARTNER) {
+      wonRef.current = { ...wonRef.current, us: wonRef.current.us + 1 };
+    } else {
+      wonRef.current = { ...wonRef.current, them: wonRef.current.them + 1 };
+    }
+    setWon({ ...wonRef.current });
+    seatWonRef.current = seatWonRef.current.map((n, i) => (i === winner ? n + 1 : n));
+    setSeatWon([...seatWonRef.current]);
+    setLastWinner(winner);
+  };
+
   const setPlaysBoth = (p: Play[]) => {
+    if (p.length === 0) setLastWinner(null);
     playsRef.current = p;
     setPlays(p);
   };
@@ -93,12 +103,7 @@ export default function Tutorial() {
       await playOne(p.seat, p.card);
     }
     const winner = roundWinner(playsRef.current);
-    if (winner === YOU || winner === PARTNER) {
-      wonRef.current = { ...wonRef.current, us: wonRef.current.us + 1 };
-    } else {
-      wonRef.current = { ...wonRef.current, them: wonRef.current.them + 1 };
-    }
-    setWon({ ...wonRef.current });
+    credit(winner);
     setBusy(false);
     onDone(winner);
   };
@@ -167,12 +172,7 @@ export default function Tutorial() {
       }
       if (playsRef.current.length === 0) break;
       const winner = roundWinner(playsRef.current);
-      if (winner === YOU || winner === PARTNER) {
-        wonRef.current = { ...wonRef.current, us: wonRef.current.us + 1 };
-      } else {
-        wonRef.current = { ...wonRef.current, them: wonRef.current.them + 1 };
-      }
-      setWon({ ...wonRef.current });
+      credit(winner);
       setPlaysBoth([]);
       leader = winner;
     }
@@ -193,10 +193,6 @@ export default function Tutorial() {
       `You promised 7 and won ${wonRef.current.us}. That's ${7 * 10} points, plus ${usScore.extrasThisDeal} for the extra round${usScore.extrasThisDeal === 1 ? '' : 's'}. Extras are the rounds over your promise.`,
     );
     setBusy(false);
-  };
-
-  const finishTutorial = () => {
-    markTutorialDone();
   };
 
   // Tap handling for the guided cards.
@@ -287,8 +283,8 @@ export default function Tutorial() {
     }
   };
 
+
   const myHand = sortHand(handsState[YOU]);
-  const showHand = step >= 2;
   const highlight = (c: Card): boolean => {
     const id = shortId(c);
     if (step === 2) return id === 'AS' || id === 'KS';
@@ -296,187 +292,184 @@ export default function Tutorial() {
     if (tryCard) return id === tryCard;
     return false;
   };
+  const roundDone = !busy && plays.length > 0;
+  const canGotIt =
+    step === 1 ||
+    step === 2 ||
+    ((step === 4 || step === 5 || step === 6 || step === 7) && roundDone) ||
+    (step === 8 && !!dealResult) ||
+    step === 9;
+  const onGotIt = () => {
+    if (step === 1) {
+      setStep(2);
+      setCoach('These are your cards. The big ones usually win a round. Your Ace and King of spades are strong — spades beat everything.');
+    } else if (step === 2) {
+      setStep(3);
+      setCoach('How many rounds do you think you’ll win? Tap a number. With this hand, 3 is a good promise.');
+      setShowPromise(true);
+    } else if (step === 4) {
+      void beginStep5();
+    } else if (step === 5) {
+      setStep(6);
+      setCoach('Your turn to start a round. Try to play a spade.');
+      setTryCard('AS');
+      clearPlays();
+    } else if (step === 6) {
+      void beginStep7();
+    } else if (step === 7) {
+      void fastForward();
+    } else if (step === 8) {
+      setStep(9);
+      setCoach('One more idea: promise 0 and it’s called going zero. Win zero rounds and it’s +100. Win even one and it’s -100. Only try it when your hand is weak.');
+    } else if (step === 9) {
+      setStep(10);
+      setCoach('That’s the whole game. Keep playing deals until one side reaches 500. Win the game and you earn Coins and climb in rank — and unlock the rest of the family.');
+    }
+  };
+
+  const promised = teamPromise > 0;
+  const spadesOpen = handsState.flat().filter((c) => c.suit === 'S').length < 13;
+  const scoreUs = step === 10 && dealResult ? dealResult.usPoints : 0;
+  const scoreThem = step === 10 && dealResult ? dealResult.themPoints : 0;
+  const roundsPlayed = won.us + won.them;
+  const PILL_POS = [
+    { label: 'Grandma Rose — your partner', left: 96, top: 4, open: false },
+    { label: 'First to 500 wins', left: 130, top: 100, open: true },
+    { label: 'Left — other side', left: 10, top: 150, open: false },
+    { label: 'Right — other side', left: 236, top: 150, open: false },
+    { label: 'You', left: 168, top: 206, open: true },
+  ];
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.inner}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={styles.title}>Tutorial</Text>
-          <Text style={styles.small}>Step {step} of 10</Text>
-        </View>
-        <Text style={[styles.small, { marginTop: 4 }]}>Practice only — no Coins for this one.</Text>
-
-        {/* The table */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
-          <View style={{ alignItems: 'center', flex: 1 }}>
-            <Portrait stem="p-nbrL" size={40} />
-            <Text style={{ fontWeight: '700', color: COLORS.ink }}>Left</Text>
-          </View>
-          <View style={{ alignItems: 'center', flex: 1 }}>
-            <Portrait stem="grandma" size={48} />
-            <Text style={{ fontWeight: '700', color: COLORS.ink }}>Grandma Rose</Text>
-            <Text style={styles.small}>your partner</Text>
-          </View>
-          <View style={{ alignItems: 'center', flex: 1 }}>
-            <Portrait stem="p-nbrR" size={40} />
-            <Text style={{ fontWeight: '700', color: COLORS.ink }}>Right</Text>
-          </View>
-        </View>
-
-        <View
-          style={{
-            backgroundColor: COLORS.grass,
-            borderRadius: 16,
-            padding: 12,
-            marginTop: 12,
-            minHeight: 100,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+    <Screen scroll={false}>
+      <TopBar us={scoreUs} them={scoreThem} deal={1} onClose={() => router.replace('/')} />
+      <PartnerRow
+        name="Grandma Rose"
+        stem="grandma"
+        mood={lastWinner === PARTNER || lastWinner === YOU ? 'happy' : 'neutral'}
+        info={seatInfo(promised ? 4 : null, seatWon[PARTNER], handsState[PARTNER].length, false)}
+      />
+      <View style={{ position: 'relative' }}>
+        <TableScene
+          left={seatInfo(promised ? 2 : null, seatWon[LEFT], handsState[LEFT].length, false)}
+          right={seatInfo(promised ? 2 : null, seatWon[RIGHT], handsState[RIGHT].length, false)}
+          plays={plays}
+          winnerSeat={roundDone ? lastWinner : null}
         >
-          {plays.length === 0 ? (
-            <Text style={{ color: '#EAF3EC', fontWeight: '700' }}>
-              {step === 1 ? 'First to 500 wins.' : step === 10 ? 'That’s the whole game.' : 'The table is ready.'}
-            </Text>
-          ) : (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {plays.map((p) => (
-                <View key={`${p.seat}-${shortId(p.card)}`} style={{ alignItems: 'center', margin: 4 }}>
-                  <PlayingCard card={p.card} />
-                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{SEAT_NAME[p.seat]}</Text>
-                </View>
+          {step === 1 ? (
+            <>
+              <View style={{ position: 'absolute', left: 0, top: 0, width: 390, height: 252, backgroundColor: 'rgba(29,42,68,0.35)' }} />
+              {PILL_POS.map((p) => (
+                <Pill key={p.label} label={p.label} open={p.open} style={{ position: 'absolute', left: p.left, top: p.top }} />
               ))}
-            </View>
-          )}
+            </>
+          ) : null}
+          {step === 9 ? (
+            <>
+              <View style={{ position: 'absolute', left: 0, top: 0, width: 390, height: 252, backgroundColor: 'rgba(29,42,68,0.55)' }} />
+              <View style={{ position: 'absolute', left: 150, top: 58, width: 90, height: 132, backgroundColor: COLORS.paper, borderWidth: 3, borderColor: COLORS.ink, borderRadius: 5, boxShadow: `0 3px 0 ${COLORS.ink}`, alignItems: 'center', paddingTop: 14 }}>
+                <T px size={11} center>
+                  {'GO\nZERO'}
+                </T>
+                <T px size={34} style={{ marginTop: 10 }}>
+                  0
+                </T>
+                <T size={11}>0 rounds</T>
+              </View>
+            </>
+          ) : null}
+          {step === 10 ? (
+            <>
+              <View style={{ position: 'absolute', left: 0, top: 0, width: 390, height: 252, backgroundColor: 'rgba(29,42,68,0.55)' }} />
+              <View style={{ position: 'absolute', left: 60, top: 70, width: 270, padding: 12, backgroundColor: COLORS.paper, borderWidth: 4, borderColor: COLORS.ink, borderRadius: 6, alignItems: 'center' }}>
+                <T px size={14} center>
+                  YOU {scoreUs} • THEM {scoreThem}
+                </T>
+                <T size={13} style={{ marginTop: 6 }}>
+                  First to 500 wins
+                </T>
+              </View>
+            </>
+          ) : null}
+        </TableScene>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 4, flexWrap: 'wrap' }}>
+          <Pill label="Spades beat everything" />
+          <Pill label={spadesOpen ? 'Spades are open now' : 'No spade has been played yet'} open={spadesOpen} />
         </View>
-
-        {step >= 3 ? (
-          <View style={{ marginTop: 10 }}>
-            <PromiseDots label="Your team" promised={teamPromise} won={won.us} />
-            <Text style={styles.small}>The other side has won {won.them} round{won.them === 1 ? '' : 's'}.</Text>
-          </View>
-        ) : null}
-
-        {/* Your cards */}
-        {showHand ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 12 }}>
-            {myHand.map((c) => (
-              <PlayingCard
-                key={shortId(c)}
-                card={c}
-                highlighted={highlight(c)}
-                onPress={() => onTapCard(c)}
-                disabled={busy || (!awaitCard && !tryCard)}
-              />
-            ))}
-          </View>
-        ) : null}
-
-        {/* Coach line — one line at a time */}
-        <View style={[styles.card, { marginTop: 14, borderColor: COLORS.grass, borderWidth: 2 }]}>
-          <Text style={[styles.body, { fontSize: 16 }]}>{coach}</Text>
-        </View>
-
-        {/* Step controls */}
-        {step === 1 ? <Btn label="Got it" primary onPress={() => {
-          setStep(2);
-          setCoach('These are your cards. The big ones usually win a round. Your Ace and King of spades are strong — spades beat everything.');
-        }} /> : null}
-        {step === 2 ? <Btn label="Got it" primary onPress={() => {
-          setStep(3);
-          setCoach('How many rounds do you think you’ll win? Tap a number. With this hand, 3 is a good promise.');
-          setShowPromise(true);
-        }} /> : null}
-
+        <Coach
+          text={coach}
+          tut
+          action={canGotIt ? <BtnS label="Got it" size={14} onPress={onGotIt} style={{ width: 86, minHeight: 44, paddingHorizontal: 6, marginBottom: 0 }} /> : null}
+        />
         {step === 3 && showPromise ? (
-          <PromisePicker
-            hand={myHand}
-            partnerPromise={4}
-            partnerName="Grandma Rose"
-            seePartnerPromise
-            opponentPromises={[
-              { name: 'Left', promise: 2 },
-              { name: 'Right', promise: 2 },
-            ]}
-            suggested={3}
-            onWrongTap={(n) => {
-              if (n === 0) setCoach('0 means win zero rounds — not this time.');
-              else if (n > 3) setCoach('5 is bold — try 3 first.');
-              else setCoach('With this hand, 3 is a good promise.');
-            }}
-            onConfirm={(n) => {
-              setShowPromise(false);
-              setTeamPromise(7);
-              setCoach('Grandma promised 4. Together you promised 7. That’s your team promise. You start. Play a card — try your Queen of hearts.');
-              setStep(4);
-              setAwaitCard('QH');
-            }}
+          <View style={{ position: 'absolute', left: 12, right: 12, bottom: 0 }}>
+            <PromisePicker
+              hand={myHand}
+              partnerPromise={4}
+              partnerName="Grandma"
+              seePartnerPromise
+              opponentPromises={[
+                { name: 'Left', promise: 2 },
+                { name: 'Right', promise: 2 },
+              ]}
+              suggested={3}
+              helpOverride={coach}
+              onWrongTap={(n) => {
+                if (n === 0) setCoach('0 means win zero rounds — not this time.');
+                else if (n > 3) setCoach(`${n} is bold — try 3 first.`);
+                else setCoach('With this hand, 3 is a good promise.');
+              }}
+              onConfirm={() => {
+                setShowPromise(false);
+                setTeamPromise(7);
+                setCoach('Grandma promised 4. Together you promised 7. That’s your team promise. You start. Play a card — try your Queen of hearts.');
+                setStep(4);
+                setAwaitCard('QH');
+              }}
+            />
+          </View>
+        ) : null}
+      </View>
+
+      <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 12, gap: 6 }}>
+        {step >= 2 ? (
+          <Hand
+            cards={myHand}
+            large={settings.cardSize === 'large'}
+            isLegal={(c) => (awaitCard || tryCard ? highlight(c) || null : null)}
+            pulse={highlight}
+            onTap={onTapCard}
+            disabled={busy || (!awaitCard && !tryCard)}
           />
         ) : null}
-
-        {step === 4 && !busy && plays.length > 0 ? <Btn label="Got it" primary onPress={() => void beginStep5()} /> : null}
-        {step === 5 && !busy && plays.length > 0 ? <Btn label="Got it" primary onPress={() => {
-          setStep(6);
-          setCoach('Your turn to start a round. Try to play a spade.');
-          setTryCard('AS');
-          clearPlays();
-        }} /> : null}
-        {step === 6 && !busy && plays.length > 0 ? <Btn label="Got it" primary onPress={() => void beginStep7()} /> : null}
-        {step === 7 && !busy && plays.length > 0 ? <Btn label="Got it" primary onPress={() => void fastForward()} /> : null}
-
-        {step === 8 && dealResult ? (
-          <View style={[styles.card, { marginTop: 14 }]}>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: COLORS.ink }}>Deal done</Text>
-            <Text style={styles.body}>
-              You promised 7, won {dealResult.usWon} — +{dealResult.usPoints}
-            </Text>
-            <Btn label="Got it" primary onPress={() => {
-              setStep(9);
-              setCoach('One more idea: promise 0 and it’s called going zero. Win zero rounds and it’s +100. Win even one and it’s -100. Only try it when your hand is weak.');
-            }} />
-          </View>
-        ) : null}
-
-        {step === 9 ? (
-          <View style={[styles.card, { marginTop: 14 }]}>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: COLORS.ink }}>Go zero — 0</Text>
-            <Text style={styles.body}>Promise 0, win zero rounds: +100. Win even one: -100.</Text>
-            <Btn label="Got it" primary onPress={() => {
-              setStep(10);
-              setCoach('That’s the whole game. Keep playing deals until one side reaches 500. Win the game and you earn Coins and climb in rank — and unlock the rest of the family.');
-            }} />
-          </View>
-        ) : null}
-
-        {step === 10 && dealResult ? (
-          <View style={[styles.card, { marginTop: 14 }]}>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: COLORS.ink }}>
-              You {dealResult.usPoints} • Them {dealResult.themPoints}
-            </Text>
-            <Text style={styles.body}>First to 500 wins the game.</Text>
-            <Btn
-              label="Play a Real Game"
-              primary
+        {step === 10 ? (
+          <View style={{ marginHorizontal: 16, gap: 6 }}>
+            <BtnP
+              label="PLAY A REAL GAME"
+              size={12}
               onPress={() => {
-                finishTutorial();
+                markTutorialDone();
                 router.push('/pick');
               }}
             />
-            <Btn
+            <BtnS
               label="Back to Home"
               onPress={() => {
-                finishTutorial();
+                markTutorialDone();
                 router.replace('/');
               }}
             />
+            <T size={12} center>
+              Practice only — no Coins for this one.
+            </T>
           </View>
-        ) : null}
-
-        <Btn
-          label="Leave tutorial"
-          onPress={() => router.replace('/')}
-        />
+        ) : (
+          <YouPanel
+            info={seatInfo(promised ? 3 : null, seatWon[YOU], myHand.length, false)}
+            roundsLeft={Math.max(0, 13 - roundsPlayed)}
+          />
+        )}
       </View>
-    </ScrollView>
+    </Screen>
   );
 }

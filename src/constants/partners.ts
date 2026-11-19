@@ -203,3 +203,29 @@ export const RANK_ADVANTAGES: RankAdvantage[] = [
 
 export const nextUnlockAfter = (rank: number): PartnerDef | null =>
   PARTNERS.filter((p) => p.unlockRank > rank).sort((a, b) => a.unlockRank - b.unlockRank)[0] ?? null;
+
+/** Card header colour per partner — design canvas. */
+export const PARTNER_ACCENT: Record<string, string> = {
+  grandma: '#9a7fc8',
+  dre: '#4a8a3a',
+  marcus: '#2f6f8a',
+  theo: '#e8903a',
+  june: '#d9631e',
+  mom: '#2c9c8f',
+  dad: '#3b6fd0',
+  mae: '#e0568a',
+};
+
+/** Plain-language line for each stat value 1..5 (partner detail screen). */
+export const STAT_TEXT: Record<StatKey, string[]> = {
+  bidsBig: ['promises low', 'promises low', 'promises about right', 'promises high', 'promises high'],
+  savesSpades: ['plays spades early', 'plays spades early', 'uses spades when needed', 'saves spades', 'saves spades'],
+  wontSteal: ['often takes your round', 'often takes your round', 'sometimes takes your round', 'rarely takes your round', 'never takes your round'],
+  avoidsExtras: ['wins extras freely', 'wins extras freely', 'watches extras a little', 'avoids extras', 'avoids extras'],
+  lovesZero: ['never goes zero', 'rarely goes zero', 'sometimes goes zero', 'goes zero a lot', 'loves going zero'],
+  leadsStrong: ['plays safe', 'plays safe', 'mixes it up', 'leads strong', 'leads strong'],
+};
+
+/** "Good with you if…" / "Watch out…" without the lead-in words (cards add them in bold). */
+export const stripLead = (s: string): string =>
+  s.replace(/^Good with you (if|when) /i, '').replace(/^Watch out:\s*/i, '').replace(/^./, (c) => c.toUpperCase());
