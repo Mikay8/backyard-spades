@@ -1,6 +1,7 @@
 // Settings — design canvas. Pixel section heads, toggle rows, locked rows,
 // links, data + reset, about.
 import { router } from 'expo-router';
+import { goBack } from '../navigation';
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Lock } from '../components/PartnerCard';
@@ -92,7 +93,7 @@ export default function Settings() {
 
   return (
     <Screen
-      header={<Header title="SETTINGS" onBack={() => router.back()} />}
+      header={<Header title="SETTINGS" onBack={() => goBack()} />}
       overlay={
         <Sheet visible={confirmReset} onClose={() => setConfirmReset(false)}>
           <T x size={18}>

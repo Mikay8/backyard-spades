@@ -2,6 +2,7 @@
 // worked examples. The "Know Spades?" box at the bottom is the ONLY place the
 // old Spades words (bid / trick / trump / bag / nil) may appear.
 import { router } from 'expo-router';
+import { goBack } from '../navigation';
 import React from 'react';
 import { View } from 'react-native';
 import { IMAGES } from '../assets/images';
@@ -83,7 +84,7 @@ export default function HowToPlay() {
               HOW TO PLAY
             </T>
           </View>
-          <Header title="" onBack={() => router.back()} icon="close" iconRight />
+          <Header title="" onBack={() => goBack()} icon="close" iconRight />
         </View>
       }
       contentStyle={{ paddingTop: 4, gap: 14 }}

@@ -1,5 +1,5 @@
 // The Shed — design canvas. Buy items with Coins and equip one per partner.
-import { router } from 'expo-router';
+import { goBack } from '../navigation';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { IMAGES } from '../assets/images';
@@ -24,7 +24,7 @@ export default function Shed() {
         <>
           <Header
             title="THE SHED"
-            onBack={() => router.back()}
+            onBack={() => goBack()}
             right={
               <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
                 <Coin />

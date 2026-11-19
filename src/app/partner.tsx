@@ -1,6 +1,7 @@
 // Partner detail — design canvas "PARTNER". Big framed portrait, quirk,
 // stats with plain-language lines, games together, Pick / Buy.
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { goBack } from '../navigation';
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { IMAGES } from '../assets/images';
@@ -34,7 +35,7 @@ export default function PartnerDetail() {
 
   return (
     <Screen
-      header={<Header title="PARTNER" titleSize={12} onBack={() => router.back()} />}
+      header={<Header title="PARTNER" titleSize={12} onBack={() => goBack('/pick')} />}
       contentStyle={{ paddingTop: 8 }}
       footer={
         owned ? (
@@ -42,7 +43,7 @@ export default function PartnerDetail() {
             label={label.toUpperCase()}
             onPress={() => {
               setPicked(p.id);
-              router.back();
+              goBack('/pick');
             }}
           />
         ) : (

@@ -1,6 +1,7 @@
 // The Family — design canvas. One row per partner: framed portrait, quirk,
 // lock/rank tag, and Pick / Buy / View. Favourite (Rank 10+) kept from v1.
 import { router } from 'expo-router';
+import { goBack } from '../navigation';
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Lock } from '../components/PartnerCard';
@@ -21,7 +22,7 @@ export default function Family() {
       header={
         <Header
           title="THE FAMILY"
-          onBack={() => router.back()}
+          onBack={() => goBack()}
           right={
             <View style={{ alignItems: 'flex-end' }}>
               <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
