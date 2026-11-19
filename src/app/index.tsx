@@ -17,7 +17,7 @@ export default function Home() {
   const last = profile.lastGame;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ alignItems: 'center' }}>
+    <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.inner}>
         <Wordmark />
         <Image
@@ -97,7 +97,7 @@ export default function Home() {
         </View>
 
         <Text style={styles.sectionTitle}>Your family</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%' }}>
           {PARTNERS.map((p) => {
             const owned = profile.owned.includes(p.id);
             return (

@@ -51,7 +51,7 @@ export default function Result() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ alignItems: 'center' }}>
+    <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.inner}>
         <View style={{ alignItems: 'center', marginTop: 8 }}>
           <Portrait stem={partner.portrait} size={72} mood={res.won ? 'happy' : 'wince'} />

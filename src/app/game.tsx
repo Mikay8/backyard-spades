@@ -112,7 +112,7 @@ export default function Game() {
     seat === YOU ? 'You' : seat === PARTNER ? partner.name.split(' ')[0] : OPPONENTS[seat === LEFT ? 0 : 1].name;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ alignItems: 'center' }}>
+    <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
       <View style={[styles.inner, { maxWidth: 560 }]}>
         {/* Top bar: game score, deal, pause */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

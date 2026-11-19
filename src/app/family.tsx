@@ -15,7 +15,7 @@ export default function Family() {
   const allOwned = PARTNERS.every((p) => profile.owned.includes(p.id));
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ alignItems: 'center' }}>
+    <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.inner}>
         <Pressable onPress={() => router.back()}>
           <Text style={{ color: COLORS.grass, fontWeight: '700' }}>‹ Back</Text>

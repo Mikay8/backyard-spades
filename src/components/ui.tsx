@@ -10,11 +10,11 @@ export const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: COLORS.cream,
-    alignItems: 'center',
   },
   inner: {
     width: '100%',
     maxWidth: 520,
+    alignSelf: 'center',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 32,
@@ -140,7 +140,7 @@ export const Portrait: React.FC<{
  *  and cannot go through the GitHub connector) beside the name. Brief §12.1
  *  calls for a small spade mark with the wordmark. */
 export const Wordmark: React.FC<{ size?: number }> = ({ size = 44 }) => (
-  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+  <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
     <Image
       source={{ uri: IMAGES['app-icon'] }}
       style={{
@@ -151,7 +151,11 @@ export const Wordmark: React.FC<{ size?: number }> = ({ size = 44 }) => (
       } as ImageStyle}
       resizeMode="contain"
     />
-    <Text style={{ fontSize: size * 0.55, fontWeight: '900', color: COLORS.ink, marginLeft: 10, letterSpacing: 0.5 }}>
+    <Text
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      style={{ fontSize: size * 0.55, fontWeight: '900', color: COLORS.ink, marginLeft: 10, letterSpacing: 0.5, flexShrink: 1 }}
+    >
       BACKYARD SPADES
     </Text>
   </View>

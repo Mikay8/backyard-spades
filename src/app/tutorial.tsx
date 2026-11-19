@@ -298,7 +298,7 @@ export default function Tutorial() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ alignItems: 'center' }}>
+    <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.inner}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={styles.title}>Tutorial</Text>
