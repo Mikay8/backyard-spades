@@ -1,82 +1,104 @@
-// Family — brief §12.5. All 8 partners, buy the locked ones, favourite (Rank 10+).
+// The Family — design canvas. One row per partner: framed portrait, quirk,
+// lock/rank tag, and Pick / Buy / View. Favourite (Rank 10+) kept from v1.
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { PartnerCard } from '../components/PartnerCard';
-import { Btn, styles } from '../components/ui';
-import { COLORS } from '../constants/theme';
+import { Pressable, View } from 'react-native';
+import { Lock } from '../components/PartnerCard';
+import { BuySheet } from '../components/sheets';
+import { BtnS, Coin, Frame, Header, Panel, Screen, T, Toast } from '../components/ui';
 import { PARTNERS, partnerById } from '../constants/partners';
 import { useApp } from '../state/store';
 
 export default function Family() {
-  const { profile, rank, buyPartner, setFavourite } = useApp();
-  const [pendingBuy, setPendingBuy] = useState<string | null>(null);
+  const { profile, rank, setPicked, setFavourite } = useApp();
+  const [buyId, setBuyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const allOwned = PARTNERS.every((p) => profile.owned.includes(p.id));
+  const view = (id: string) => router.push({ pathname: '/partner', params: { id } });
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.inner}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={{ color: COLORS.grass, fontWeight: '700' }}>‹ Back</Text>
-        </Pressable>
-        <Text style={styles.title}>Family</Text>
-        <Text style={styles.subtitle}>
-          Rank {rank} • ● {profile.coins} Coins
-        </Text>
-        {allOwned ? (
-          <Text style={[styles.body, { marginTop: 8, fontWeight: '700', color: COLORS.grass }]}>
-            The whole family is here.
-          </Text>
-        ) : null}
-
-        {PARTNERS.map((p) => (
-          <PartnerCard
-            key={p.id}
-            partner={p}
-            owned={profile.owned.includes(p.id)}
-            rank={rank}
-            coins={profile.coins}
-            favourite={profile.favourite === p.id}
-            gamesPlayed={profile.gamesWithPartner[p.id]?.played}
-            gamesWon={profile.gamesWithPartner[p.id]?.won}
-            onBuy={() => setPendingBuy(p.id)}
-            onFavourite={() => setFavourite(p.id)}
-            showBuy
-          />
-        ))}
-
-        {pendingBuy ? (
-          <View style={[styles.card, { marginTop: 12, borderColor: COLORS.accent, borderWidth: 2 }]}>
-            <Text style={{ fontSize: 17, fontWeight: '800', color: COLORS.ink }}>
-              Buy {partnerById(pendingBuy).name} for {partnerById(pendingBuy).price} Coins?
-            </Text>
-            <Text style={styles.body}>You have {profile.coins} Coins.</Text>
-            <View style={{ flexDirection: 'row' }}>
-              <View style={{ flex: 1, marginRight: 6 }}>
-                <Btn label="Cancel" onPress={() => setPendingBuy(null)} />
+    <Screen
+      header={
+        <Header
+          title="THE FAMILY"
+          onBack={() => router.back()}
+          right={
+            <View style={{ alignItems: 'flex-end' }}>
+              <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+                <Coin />
+                <T x size={13}>
+                  {profile.coins} Coins
+                </T>
               </View>
-              <View style={{ flex: 1, marginLeft: 6 }}>
-                <Btn
-                  label="Buy"
-                  primary
-                  onPress={() => {
-                    if (buyPartner(pendingBuy)) {
-                      setToast(`${partnerById(pendingBuy).name} joined the family.`);
-                    } else {
-                      setToast('Not enough Coins yet — play more games to earn Coins.');
-                    }
-                    setPendingBuy(null);
-                  }}
-                />
-              </View>
+              <T x size={13}>
+                Rank {rank}
+              </T>
             </View>
-          </View>
-        ) : null}
-        {toast ? (
-          <Text style={[styles.body, { marginTop: 10, color: COLORS.grass, fontWeight: '700' }]}>{toast}</Text>
-        ) : null}
-      </View>
-    </ScrollView>
+          }
+        />
+      }
+      contentStyle={{ paddingTop: 6, gap: 10 }}
+      overlay={
+        <>
+          <BuySheet
+            partnerId={buyId}
+            onClose={() => setBuyId(null)}
+            onBought={(id) => setToast(`${partnerById(id).name} joined the family.`)}
+          />
+          <Toast text={toast} />
+        </>
+      }
+    >
+      {allOwned ? (
+        <T x size={14}>
+          The whole family is here.
+        </T>
+      ) : null}
+      {PARTNERS.map((p) => {
+        const owned = profile.owned.includes(p.id);
+        const picked = profile.picked === p.id;
+        const canBuy = rank >= p.unlockRank && profile.coins >= p.price;
+        const fav = profile.favourite === p.id;
+        return (
+          <Panel key={p.id} picked={picked} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10 }}>
+            <Pressable onPress={() => view(p.id)} accessibilityRole="button" accessibilityLabel={`${p.name} details`}>
+              <Frame stem={p.portrait} size={64} item={profile.equip[p.id]} grey={!owned} />
+            </Pressable>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <T x size={15}>
+                {p.name}
+                {fav ? ' ★' : ''}
+              </T>
+              <T size={12} style={{ marginTop: 2, marginBottom: 6 }}>
+                {p.quirk}
+              </T>
+              {!owned ? (
+                <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+                  <Lock size={14} />
+                  <T x size={12}>
+                    Rank {p.unlockRank} • {p.price} Coins
+                  </T>
+                </View>
+              ) : rank >= 10 ? (
+                <Pressable onPress={() => setFavourite(p.id)} accessibilityRole="button" style={{ minHeight: 32, justifyContent: 'center' }}>
+                  <T x size={12} style={{ textDecorationLine: 'underline' }}>
+                    {fav ? '★ Favourite partner' : '☆ Save as favourite'}
+                  </T>
+                </Pressable>
+              ) : null}
+            </View>
+            <BtnS
+              label={owned ? (picked ? 'Picked ✓' : 'Pick') : canBuy ? 'Buy' : 'View'}
+              size={13}
+              style={{ width: 96, minHeight: 44, paddingHorizontal: 6 }}
+              onPress={() => (owned ? setPicked(p.id) : canBuy ? setBuyId(p.id) : view(p.id))}
+            />
+          </Panel>
+        );
+      })}
+      <T size={12} style={{ opacity: 0.85 }}>
+        Coins come from playing games. Higher ranks open the rest of the family.
+      </T>
+    </Screen>
   );
 }

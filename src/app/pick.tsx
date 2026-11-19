@@ -1,101 +1,90 @@
-// Pick Your Partner — brief §12.2. Grandma Rose pre-selected for first-timers.
+// Pick Your Partner — design canvas. Two-column card grid; sticky footer with
+// the picked partner and START GAME.
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { PartnerCard } from '../components/PartnerCard';
-import { Btn, styles } from '../components/ui';
-import { COLORS } from '../constants/theme';
+import { BuySheet } from '../components/sheets';
+import { Avatar, BtnP, Header, Screen, T, Toast } from '../components/ui';
 import { PARTNERS, partnerById } from '../constants/partners';
 import { useApp } from '../state/store';
 
 export default function Pick() {
-  const { profile, rank, buyPartner, startGame } = useApp();
+  const { profile, rank, startGame, setPicked } = useApp();
   const params = useLocalSearchParams<{ partner?: string }>();
-  const [selected, setSelected] = useState<string>(
-    params.partner && profile.owned.includes(params.partner) ? params.partner : 'grandma',
-  );
-  const [pendingBuy, setPendingBuy] = useState<string | null>(null);
+  const [buyId, setBuyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const chosen = partnerById(selected);
 
-  const confirmBuy = (id: string) => {
-    if (buyPartner(id)) {
-      setToast(`${partnerById(id).name} joined the family.`);
-      setSelected(id);
-      setPendingBuy(null);
-    } else {
-      setToast('Not enough Coins yet — play more games to earn Coins.');
-      setPendingBuy(null);
-    }
-  };
+  useEffect(() => {
+    if (params.partner) setPicked(params.partner);
+  }, [params.partner, setPicked]);
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(() => setToast(null), 1800);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const picked = partnerById(profile.owned.includes(profile.picked) ? profile.picked : 'grandma');
+  const view = (id: string) => router.push({ pathname: '/partner', params: { id } });
+
+  const rows: (typeof PARTNERS)[] = [];
+  for (let i = 0; i < PARTNERS.length; i += 2) rows.push(PARTNERS.slice(i, i + 2));
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.inner}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={{ color: COLORS.grass, fontWeight: '700' }}>‹ Back</Text>
-        </Pressable>
-        <Text style={styles.title}>Pick your partner</Text>
-        <Text style={styles.subtitle}>Who&rsquo;s sitting across from you?</Text>
-        <Text style={[styles.small, { marginTop: 6 }]}>
-          Rank {rank} • ● {profile.coins} Coins
-        </Text>
-
-        {PARTNERS.map((p) => (
-          <PartnerCard
-            key={p.id}
-            partner={p}
-            owned={profile.owned.includes(p.id)}
-            rank={rank}
-            coins={profile.coins}
-            selected={selected === p.id && profile.owned.includes(p.id)}
-            favourite={profile.favourite === p.id}
-            gamesPlayed={profile.gamesWithPartner[p.id]?.played}
-            gamesWon={profile.gamesWithPartner[p.id]?.won}
-            onPick={() => setSelected(p.id)}
-            onBuy={() => setPendingBuy(p.id)}
-            showBuy
-          />
-        ))}
-
-        {pendingBuy ? (
-          <View style={[styles.card, { marginTop: 12, borderColor: COLORS.accent, borderWidth: 2 }]}>
-            <Text style={{ fontSize: 17, fontWeight: '800', color: COLORS.ink }}>
-              Buy {partnerById(pendingBuy).name} for {partnerById(pendingBuy).price} Coins?
-            </Text>
-            <Text style={styles.body}>You have {profile.coins} Coins.</Text>
-            <View style={{ flexDirection: 'row' }}>
-              <View style={{ flex: 1, marginRight: 6 }}>
-                <Btn label="Cancel" onPress={() => setPendingBuy(null)} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 6 }}>
-                <Btn label="Buy" primary onPress={() => confirmBuy(pendingBuy)} />
-              </View>
-            </View>
+    <Screen
+      header={<Header title="PICK YOUR PARTNER" titleSize={13} subtitle="Who’s sitting across from you?" onBack={() => router.back()} />}
+      contentStyle={{ paddingTop: 6, gap: 12 }}
+      footer={
+        <>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <Avatar stem={picked.portrait} size={40} item={profile.equip[picked.id]} />
+            <T x size={13} style={{ flex: 1 }}>
+              {picked.name} — {picked.quirk}
+            </T>
           </View>
-        ) : null}
-
-        {toast ? (
-          <Text style={[styles.body, { marginTop: 10, color: COLORS.grass, fontWeight: '700' }]}>{toast}</Text>
-        ) : null}
-
-        <View style={[styles.card, { marginTop: 16 }]}>
-          <Text style={{ fontSize: 16, fontWeight: '800', color: COLORS.ink }}>
-            {chosen.name} — {chosen.role}
-          </Text>
-          <Text style={styles.body}>{chosen.quirk}</Text>
+          <BtnP
+            label="START GAME"
+            onPress={() => {
+              startGame(picked.id);
+              router.push('/game');
+            }}
+            testID="start-game"
+          />
+        </>
+      }
+      overlay={
+        <>
+          <BuySheet
+            partnerId={buyId}
+            onClose={() => setBuyId(null)}
+            onBought={(id) => {
+              setToast(`${partnerById(id).name} joined the family.`);
+              setPicked(id);
+            }}
+          />
+          <Toast text={toast} bottom={150} />
+        </>
+      }
+    >
+      {rows.map((row) => (
+        <View key={row[0].id} style={{ flexDirection: 'row', gap: 12 }}>
+          {row.map((p) => {
+            const owned = profile.owned.includes(p.id);
+            const canBuy = rank >= p.unlockRank && profile.coins >= p.price;
+            return (
+              <PartnerCard
+                key={p.id}
+                partner={p}
+                picked={picked.id === p.id}
+                onTap={() => (owned ? setPicked(p.id) : view(p.id))}
+                onAction={() => (owned ? setPicked(p.id) : canBuy ? setBuyId(p.id) : view(p.id))}
+                onView={() => view(p.id)}
+              />
+            );
+          })}
+          {row.length === 1 ? <View style={{ flex: 1 }} /> : null}
         </View>
-        <Btn
-          label={`Start Game with ${chosen.name.split(' ')[0]}`}
-          primary
-          disabled={!profile.owned.includes(selected)}
-          onPress={() => {
-            startGame(selected);
-            router.push('/game');
-          }}
-          testID="start-game"
-        />
-      </View>
-    </ScrollView>
+      ))}
+    </Screen>
   );
 }
