@@ -51,9 +51,10 @@ export const PartnerRow: React.FC<{
   mood: 'happy' | 'neutral' | 'wince';
   item?: string | null;
   info: SeatInfo;
-}> = ({ name, stem, mood, item, info }) => (
-  <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center', alignItems: 'center', height: 100 }}>
-    <Frame stem={stem} size={80} mood={mood} item={item} label={name} />
+  compact?: boolean;
+}> = ({ name, stem, mood, item, info, compact }) => (
+  <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center', alignItems: 'center', height: compact ? 84 : 100 }}>
+    <Frame stem={stem} size={compact ? 56 : 80} mood={mood} item={item} label={name} />
     <View style={{ width: 190 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <T x size={16}>
@@ -64,9 +65,11 @@ export const PartnerRow: React.FC<{
       <T size={13} style={{ marginTop: 2 }}>
         Promised {info.promise} • Won {info.won}
       </T>
-      <T size={14} style={{ letterSpacing: 2, minHeight: 18 }}>
-        {info.dots}
-      </T>
+      {compact ? null : (
+        <T size={14} style={{ letterSpacing: 2, minHeight: 18 }}>
+          {info.dots}
+        </T>
+      )}
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <CardBacks />
         <T size={12} style={{ marginLeft: 6 }}>
@@ -121,9 +124,10 @@ export const TableScene: React.FC<{
   right: SeatInfo;
   plays: Play[];
   winnerSeat: number | null;
+  maxH?: number;
   children?: React.ReactNode;
-}> = ({ left, right, plays, winnerSeat, children }) => (
-  <Scaled w={390} h={252}>
+}> = ({ left, right, plays, winnerSeat, maxH, children }) => (
+  <Scaled w={390} h={252} maxH={maxH}>
     <Pix uri={IMAGES.scene} size={390} h={252} label="Backyard picnic table" />
     <OppSeat label="Left" stem="p-nbrL" info={left} left={8} />
     <OppSeat label="Right" stem="p-nbrR" info={right} left={298} />
@@ -180,7 +184,7 @@ export const Hand: React.FC<{
   );
 };
 
-export const YouPanel: React.FC<{ info: SeatInfo; roundsLeft: number }> = ({ info, roundsLeft }) => (
+export const YouPanel: React.FC<{ info: SeatInfo; roundsLeft: number; compact?: boolean }> = ({ info, roundsLeft, compact }) => (
   <View
     style={{
       marginHorizontal: 16,
@@ -188,7 +192,7 @@ export const YouPanel: React.FC<{ info: SeatInfo; roundsLeft: number }> = ({ inf
       borderWidth: 4,
       borderColor: COLORS.ink,
       borderRadius: 10,
-      paddingVertical: 10,
+      paddingVertical: compact ? 5 : 10,
       paddingHorizontal: 14,
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -202,7 +206,7 @@ export const YouPanel: React.FC<{ info: SeatInfo; roundsLeft: number }> = ({ inf
       <T px size={12}>
         Promised {info.promise} • Won {info.won}
       </T>
-      <T size={20} style={{ letterSpacing: 3, minHeight: 26 }}>
+      <T size={compact ? 14 : 20} style={{ letterSpacing: 3, minHeight: compact ? 0 : 26 }}>
         {info.dots}
       </T>
     </View>

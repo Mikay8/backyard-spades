@@ -9,9 +9,9 @@ export const useColumnWidth = () => {
   return Math.min(width, PHONE_W);
 };
 
-export const Scaled: React.FC<{ w: number; h: number; children: React.ReactNode }> = ({ w, h, children }) => {
+export const Scaled: React.FC<{ w: number; h: number; maxH?: number; children: React.ReactNode }> = ({ w, h, maxH, children }) => {
   const col = useColumnWidth();
-  const s = Math.min(col / w, 1.1);
+  const s = Math.min(col / w, 1.1, maxH ? maxH / h : Infinity);
   return (
     <View style={{ width: w * s, height: h * s, alignSelf: 'center' }}>
       <View

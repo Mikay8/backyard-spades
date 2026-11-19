@@ -4,7 +4,7 @@
 // deal score, pause, quit, peek (Cheater's Mirror).
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { PromisePicker } from '../components/PromisePicker';
 import { Coach, Hand, PartnerRow, TableScene, TopBar, YouPanel, seatInfo } from '../components/Table';
 import { InkLine } from '../components/sheets';
@@ -21,6 +21,8 @@ const fmt = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
 export default function Game() {
   const { game, setGame, finishGame, profile, settings, spendMirror } = useApp();
+  // Short screens (phone browsers with their toolbars) get a tighter table.
+  const short = useWindowDimensions().height < 760;
   const [hint, setHint] = useState<string | null>(null);
   const [sheet, setSheet] = useState<null | 'pause' | 'quit' | 'peek'>(null);
   const [banner, setBanner] = useState<string | null>(null);
@@ -116,7 +118,7 @@ export default function Game() {
 
   return (
     <Screen
-      scroll={false}
+      contentStyle={{ paddingHorizontal: 0, paddingBottom: 0, flexGrow: 1 }}
       overlay={
         <>
           {/* Deal score */}
@@ -236,34 +238,14 @@ export default function Game() {
         stem={partner.portrait}
         mood={partnerMood}
         item={profile.equip[partner.id]}
+        compact={short}
         info={seatInfo(game.promises[PARTNER], game.wonRounds[PARTNER], game.hands[PARTNER].length, thinking(PARTNER), game.phase === 'promise' && !game.seePartnerPromise)}
       />
 
-      <View style={{ position: 'relative' }}>
-        <TableScene
-          left={seatInfo(game.promises[LEFT], game.wonRounds[LEFT], game.hands[LEFT].length, thinking(LEFT))}
-          right={seatInfo(game.promises[RIGHT], game.wonRounds[RIGHT], game.hands[RIGHT].length, thinking(RIGHT))}
-          plays={plays}
-          winnerSeat={winnerSeat}
-        />
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, alignItems: 'center', paddingVertical: 4, flexWrap: 'wrap' }}>
-          {profile.gamesPlayed < 3 ? <Pill label="Spades beat everything" /> : null}
-          <Pill label={game.spadesBroken ? 'Spades are open now' : 'No spade has been played yet'} open={game.spadesBroken} />
-          {canPeek ? (
-            <BtnS onPress={() => { spendMirror(); setSheet('peek'); }} style={{ minHeight: 36, paddingVertical: 2, paddingHorizontal: 8, marginBottom: 0 }}>
-              <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-                <Pix uri={IMAGES['i-mirror']} size={18} />
-                <T x size={12}>
-                  Peek ({profile.mirror})
-                </T>
-              </View>
-            </BtnS>
-          ) : null}
-        </View>
-        <Coach text={status} />
-
-        {game.phase === 'promise' ? (
-          <View style={{ position: 'absolute', left: 12, right: 12, bottom: 0 }}>
+      {game.phase === 'promise' ? (
+        <>
+          {/* Promise phase: the panel sits in the flow above your hand (never on top of it). */}
+          <View style={{ marginHorizontal: 12, marginBottom: 8 }}>
             <PromisePicker
               hand={myHand}
               partnerPromise={game.promises[PARTNER]}
@@ -276,16 +258,42 @@ export default function Game() {
               onConfirm={(n) => setGame(setPlayerPromise(game, n))}
             />
           </View>
-        ) : null}
-      </View>
-
-      <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 12, gap: 6 }}>
-        <Hand cards={myHand} large={settings.cardSize === 'large'} isLegal={isLegal} onTap={onTapCard} />
-        <YouPanel
-          info={seatInfo(game.promises[YOU], game.wonRounds[YOU], game.hands[YOU].length, false)}
-          roundsLeft={Math.max(0, 13 - roundsPlayed)}
-        />
-      </View>
+          <Hand cards={myHand} large={settings.cardSize === 'large'} isLegal={() => null} onTap={() => undefined} disabled />
+        </>
+      ) : (
+        <>
+          <TableScene
+            left={seatInfo(game.promises[LEFT], game.wonRounds[LEFT], game.hands[LEFT].length, thinking(LEFT))}
+            right={seatInfo(game.promises[RIGHT], game.wonRounds[RIGHT], game.hands[RIGHT].length, thinking(RIGHT))}
+            plays={plays}
+            winnerSeat={winnerSeat}
+            maxH={short ? 190 : undefined}
+          />
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, alignItems: 'center', paddingVertical: 4, flexWrap: 'wrap' }}>
+            {profile.gamesPlayed < 3 ? <Pill label="Spades beat everything" /> : null}
+            <Pill label={game.spadesBroken ? 'Spades are open now' : 'No spade has been played yet'} open={game.spadesBroken} />
+            {canPeek ? (
+              <BtnS onPress={() => { spendMirror(); setSheet('peek'); }} style={{ minHeight: 36, paddingVertical: 2, paddingHorizontal: 8, marginBottom: 0 }}>
+                <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+                  <Pix uri={IMAGES['i-mirror']} size={18} />
+                  <T x size={12}>
+                    Peek ({profile.mirror})
+                  </T>
+                </View>
+              </BtnS>
+            ) : null}
+          </View>
+          <Coach text={status} />
+          <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 12, gap: 6 }}>
+            <Hand cards={myHand} large={settings.cardSize === 'large'} isLegal={isLegal} onTap={onTapCard} />
+            <YouPanel
+              info={seatInfo(game.promises[YOU], game.wonRounds[YOU], game.hands[YOU].length, false)}
+              roundsLeft={Math.max(0, 13 - roundsPlayed)}
+              compact={short}
+            />
+          </View>
+        </>
+      )}
     </Screen>
   );
 }
