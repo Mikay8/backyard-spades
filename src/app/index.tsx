@@ -39,7 +39,7 @@ export default function Home() {
           onPress={() => router.push('/family')}
           accessibilityRole="button"
           accessibilityLabel={`${profile.coins} Coins, open the family`}
-          style={{ width: 104, backgroundColor: COLORS.paper, borderWidth: 3, borderColor: COLORS.ink, borderRadius: 8, padding: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+          style={{ width: 124, backgroundColor: COLORS.paper, borderWidth: 3, borderColor: COLORS.ink, borderRadius: 8, padding: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
         >
           <Coin />
           <T x size={14}>

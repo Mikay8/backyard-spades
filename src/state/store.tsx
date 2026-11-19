@@ -84,6 +84,8 @@ export interface Settings {
   cardSize: 'normal' | 'large';
   tableTheme: 'check' | 'grass' | 'wood';
   cardBack: 'check' | 'green' | 'navy';
+  /** Quick = first to 250, Classic = first to 500. */
+  gameLength: 'quick' | 'classic';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -95,6 +97,7 @@ export const DEFAULT_SETTINGS: Settings = {
   cardSize: 'normal',
   tableTheme: 'check',
   cardBack: 'check',
+  gameLength: 'quick',
 };
 
 export interface GameResult {
@@ -112,6 +115,9 @@ export interface GameResult {
   playerWentZeroClean: boolean;
   newlyBuyable: PartnerDef[];
 }
+
+/** Points needed to win a game with these settings. */
+export const targetFor = (s: Settings): number => (s.gameLength === 'classic' ? 500 : 250);
 
 async function getJSON<T>(key: string): Promise<T | null> {
   try {
@@ -191,8 +197,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [result, setResult] = useState<GameResult | null>(null);
   const [lastResult, setLastResult] = useState<GameResult | null>(null);
   const profileRef = useRef(profile);
+  const settingsRef = useRef(settings);
   useEffect(() => {
     profileRef.current = profile;
+    settingsRef.current = settings;
   });
 
   useEffect(() => {
@@ -230,7 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     (partnerId: string) => {
       const rank = rankForXp(profileRef.current.xp);
       setResult(null);
-      setGameState(createGame({ partnerId, seePartnerPromise: rank >= 5 }));
+      setGameState(createGame({ partnerId, seePartnerPromise: rank >= 5, target: targetFor(settingsRef.current) }));
     },
     [],
   );

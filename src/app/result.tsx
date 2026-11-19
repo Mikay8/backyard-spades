@@ -91,7 +91,7 @@ export default function Result() {
                 value={shareText}
                 onChangeText={setShareText}
                 accessibilityLabel="Share text"
-                style={{ flex: 1, minHeight: 160, borderWidth: 3, borderColor: COLORS.ink, padding: 8, fontFamily: FONT.body, fontSize: 13, lineHeight: 18, color: COLORS.ink, backgroundColor: '#fff', textAlignVertical: 'top' }}
+                style={{ flex: 1, minHeight: 160, borderWidth: 3, borderColor: COLORS.ink, padding: 8, fontFamily: FONT.body, fontSize: 15, lineHeight: 20, color: COLORS.ink, backgroundColor: '#fff', textAlignVertical: 'top' }}
               />
             </View>
             <T size={12}>Tap the text to edit it before sending. The share never shows card order or the deck.</T>

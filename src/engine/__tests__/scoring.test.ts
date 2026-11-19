@@ -72,4 +72,10 @@ describe('gameWinner', () => {
   it('higher score wins when both cross 500', () => {
     expect(gameWinner({ us: 520, them: 505 })).toBe('us');
   });
+  it('quick game: first to 250 wins, -100 loses', () => {
+    expect(gameWinner({ us: 260, them: 120 }, 250)).toBe('us');
+    expect(gameWinner({ us: 240, them: 120 }, 250)).toBeNull();
+    expect(gameWinner({ us: -100, them: 50 }, 250)).toBe('them');
+    expect(gameWinner({ us: -90, them: 50 }, 250)).toBeNull();
+  });
 });

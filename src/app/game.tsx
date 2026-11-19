@@ -15,8 +15,11 @@ import { partnerFirstName } from '../constants/items';
 import { useApp } from '../state/store';
 import { LEFT, PARTNER, RIGHT, YOU, legalForTurn, nextDeal, playAiTurn, playCard, setPlayerPromise } from '../engine/game';
 import { SUIT_NAME, sortHand, type Card } from '../engine/cards';
+import { loseFloor } from '../engine/scoring';
 
-const AI_DELAY_MS = 700;
+// Pause before each computer player's card — short enough to keep games moving,
+// long enough to see who played what.
+const AI_DELAY_MS = 450;
 const fmt = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
 export default function Game() {
@@ -37,7 +40,7 @@ export default function Game() {
       lastRoundRef.current = key;
       const w = game.lastRoundWinner;
       setBanner(w === YOU ? 'You took the round.' : w === PARTNER ? `${partnerFirstName(game.partnerId)} takes it.` : 'They took the round.');
-      const t = setTimeout(() => setBanner(null), settings.reducedMotion ? 700 : 1000);
+      const t = setTimeout(() => setBanner(null), settings.reducedMotion ? 600 : 750);
       return () => clearTimeout(t);
     }
     return undefined;
@@ -151,12 +154,18 @@ export default function Game() {
                   </T>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
-                  <Bar pct={game.scores.us / 5} style={{ flex: 1 }} />
-                  <Bar pct={game.scores.them / 5} kind="them" style={{ flex: 1 }} />
+                  <Bar pct={(100 * game.scores.us) / game.target} style={{ flex: 1 }} />
+                  <Bar pct={(100 * game.scores.them) / game.target} kind="them" style={{ flex: 1 }} />
                 </View>
                 {game.phase === 'gameOver' ? (
                   <T x size={14}>
-                    {game.winner === 'us' ? 'You reached 500.' : game.scores.them >= 500 ? 'They reached 500.' : 'You fell to −200.'}
+                    {game.winner === 'us'
+                      ? game.scores.us >= game.target
+                        ? `You reached ${game.target}.`
+                        : `They fell to ${loseFloor(game.target)}.`
+                      : game.scores.them >= game.target
+                        ? `They reached ${game.target}.`
+                        : `You fell to ${loseFloor(game.target)}.`}
                   </T>
                 ) : null}
                 {game.phase === 'gameOver' ? (
@@ -232,7 +241,7 @@ export default function Game() {
         </>
       }
     >
-      <TopBar us={game.scores.us} them={game.scores.them} deal={game.dealNumber} onPause={() => setSheet('pause')} />
+      <TopBar us={game.scores.us} them={game.scores.them} deal={game.dealNumber} target={game.target} onPause={() => setSheet('pause')} />
       <PartnerRow
         name={partner.name}
         stem={partner.portrait}

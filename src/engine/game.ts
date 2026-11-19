@@ -76,11 +76,15 @@ export interface GameState {
   playerWentZeroClean: boolean;
   /** Rank 5 advantage: the player sees the partner's promise before promising. */
   seePartnerPromise: boolean;
+  /** Points to win: 500 classic, 250 quick. */
+  target: number;
 }
 
 export interface NewGameOptions {
   partnerId: string;
   seePartnerPromise?: boolean;
+  /** Points to win (default 500). */
+  target?: number;
   /** Fixed hands for the tutorial / tests: [you, left, partner, right]. */
   fixedHands?: Card[][];
   dealerSeat?: number;
@@ -125,6 +129,7 @@ export const createGame = (opts: NewGameOptions): GameState => {
     partnerStats: { promisedTotal: promises[PARTNER] ?? 0, wonTotal: 0, ledLow: 0, stole: 0 },
     playerWentZeroClean: false,
     seePartnerPromise: opts.seePartnerPromise ?? false,
+    target: opts.target ?? 500,
   };
 };
 
@@ -297,7 +302,7 @@ const finishDeal = (state: GameState): GameState => {
     partnerWon: state.wonRounds[PARTNER],
   };
   const scores = { us: state.scores.us + usScore.points, them: state.scores.them + themScore.points };
-  const winner = gameWinner(scores);
+  const winner = gameWinner(scores, state.target);
   const next: GameState = {
     ...state,
     scores,
@@ -317,6 +322,7 @@ export const nextDeal = (state: GameState): GameState => {
   const fresh = createGame({
     partnerId: state.partnerId,
     seePartnerPromise: state.seePartnerPromise,
+    target: state.target,
     dealerSeat: (state.dealerSeat + 1) % 4,
   });
   return {

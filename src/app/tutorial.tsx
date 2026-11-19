@@ -24,7 +24,7 @@ import { PromisePicker } from '../components/PromisePicker';
 import { Coach, Hand, PartnerRow, TableScene, TopBar, YouPanel, seatInfo } from '../components/Table';
 import { BtnP, BtnS, Pill, Screen, T } from '../components/ui';
 import { COLORS } from '../constants/theme';
-import { useApp } from '../state/store';
+import { targetFor, useApp } from '../state/store';
 import { chooseCard } from '../engine/ai';
 import { rankLabel, roundWinner, sortHand, type Card, type Play } from '../engine/cards';
 import { TUTORIAL_HANDS, LEFT, PARTNER, RIGHT, YOU } from '../engine/game';
@@ -39,6 +39,7 @@ export default function Tutorial() {
   const { markTutorialDone, settings } = useApp();
   // Short screens (phone browsers with their toolbars) get a tighter table.
   const short = useWindowDimensions().height < 760;
+  const target = targetFor(settings);
   const [step, setStep] = useState(1);
   const [coach, setCoach] = useState(
     'This is Spades with a partner. You and Grandma Rose are one team. The other side is the other team.',
@@ -94,7 +95,7 @@ export default function Tutorial() {
     const next = [...playsRef.current, { seat, card }];
     setPlaysBoth(next);
     bump();
-    await sleep(650);
+    await sleep(500);
     return next;
   };
 
@@ -325,7 +326,7 @@ export default function Tutorial() {
       setCoach('One more idea: promise 0 and it’s called going zero. Win zero rounds and it’s +100. Win even one and it’s -100. Only try it when your hand is weak.');
     } else if (step === 9) {
       setStep(10);
-      setCoach('That’s the whole game. Keep playing deals until one side reaches 500. Win the game and you earn Coins and climb in rank — and unlock the rest of the family.');
+      setCoach(`That’s the whole game. Keep playing deals until one side reaches ${target}. Win the game and you earn Coins and climb in rank — and unlock the rest of the family.`);
     }
   };
 
@@ -337,7 +338,7 @@ export default function Tutorial() {
   const roundsPlayed = won.us + won.them;
   const PILL_POS = [
     { label: 'Grandma Rose — your partner', left: 96, top: 4, open: false },
-    { label: 'First to 500 wins', left: 130, top: 100, open: true },
+    { label: `First to ${target} wins`, left: 125, top: 100, open: true },
     { label: 'Left — other side', left: 10, top: 150, open: false },
     { label: 'Right — other side', left: 236, top: 150, open: false },
     { label: 'You', left: 168, top: 206, open: true },
@@ -345,7 +346,7 @@ export default function Tutorial() {
 
   return (
     <Screen contentStyle={{ paddingHorizontal: 0, paddingBottom: 0, flexGrow: 1 }}>
-      <TopBar us={scoreUs} them={scoreThem} deal={1} onClose={() => router.replace('/')} />
+      <TopBar us={scoreUs} them={scoreThem} deal={1} target={target} onClose={() => router.replace('/')} />
       <PartnerRow
         name="Grandma Rose"
         stem="grandma"
@@ -374,13 +375,13 @@ export default function Tutorial() {
             <>
               <View style={{ position: 'absolute', left: 0, top: 0, width: 390, height: 252, backgroundColor: 'rgba(29,42,68,0.55)' }} />
               <View style={{ position: 'absolute', left: 150, top: 58, width: 90, height: 132, backgroundColor: COLORS.paper, borderWidth: 3, borderColor: COLORS.ink, borderRadius: 5, boxShadow: `0 3px 0 ${COLORS.ink}`, alignItems: 'center', paddingTop: 14 }}>
-                <T px size={11} center>
+                <T px fixed size={11} center>
                   {'GO\nZERO'}
                 </T>
-                <T px size={34} style={{ marginTop: 10 }}>
+                <T px fixed size={34} style={{ marginTop: 10 }}>
                   0
                 </T>
-                <T size={11}>0 rounds</T>
+                <T fixed size={11}>0 rounds</T>
               </View>
             </>
           ) : null}
@@ -392,7 +393,7 @@ export default function Tutorial() {
                   YOU {scoreUs} • THEM {scoreThem}
                 </T>
                 <T size={13} style={{ marginTop: 6 }}>
-                  First to 500 wins
+                  First to {target} wins
                 </T>
               </View>
             </>
