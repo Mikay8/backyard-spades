@@ -76,10 +76,10 @@ export const PartnerCard: React.FC<{
   return (
     <Panel picked={picked} style={{ flex: 1 }}>
       <View style={{ height: 8, backgroundColor: PARTNER_ACCENT[p.id] }} />
-      <View style={owned ? undefined : ({ filter: 'grayscale(1)', opacity: 0.7 } as object)}>
+      <View style={owned ? undefined : { opacity: 0.8 }}>
         <Pressable onPress={onTap} accessibilityRole="button" accessibilityLabel={p.name} style={{ paddingHorizontal: 8, paddingTop: 8 }}>
           <View style={{ alignItems: 'center', paddingTop: 4, paddingBottom: 6 }}>
-            <Frame stem={p.portrait} size={80} item={itemId} label={`${p.name} portrait`} />
+            <Frame stem={p.portrait} size={80} item={itemId} grey={!owned} label={`${p.name} portrait`} />
           </View>
           <T x size={15}>
             {p.name}
