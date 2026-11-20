@@ -287,7 +287,7 @@ export default function Settings() {
 
       <H t="About" />
       <T size={13} style={{ paddingVertical: 6 }}>
-        Backyard Spades is a points-based family card game. No real-money gambling, no prizes, no in-app purchases of currency.
+        Backyard Spades is a points-based family card game. No real-money gambling and no prizes: Coins can be earned by playing or bought in the Coin Shop, and never turn back into money. Coin Shop prices are a preview — no payment is taken yet.
       </T>
       <T size={13} style={{ paddingVertical: 6 }}>
         Version 1.0.0
