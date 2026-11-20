@@ -158,21 +158,6 @@ export const partnerById = (id: string): PartnerDef =>
 export const statTotal = (p: PartnerDef): number =>
   STAT_ORDER.reduce((sum, k) => sum + p.stats[k], 0);
 
-/** The two AI opponents — brief §9.1: balanced 3s, no quirks, no partner names.
- *  Opponent identity was open (§21); chosen here as a proposal: Bill on the
- *  left, a Neighbour on the right. Bill + the two neighbour portraits are the
- *  assets Mikayla supplied; p-nbrL-neutral is used in the How to Play table
- *  diagram as the left opponent illustration. */
-export interface OpponentDef {
-  id: 'bill' | 'neighbour';
-  name: string;
-  portrait: string;
-}
-
-export const OPPONENTS: OpponentDef[] = [
-  { id: 'bill', name: 'Bill', portrait: 'bill' },
-  { id: 'neighbour', name: 'Neighbour', portrait: 'p-nbrR' },
-];
 
 /** Rank + Coins — brief §10 (exact). */
 export const STARTER_COINS = 25;

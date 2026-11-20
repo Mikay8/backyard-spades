@@ -29,7 +29,11 @@ export const BALANCED: Stats = { bidsBig: 3, savesSpades: 3, wontSteal: 5, avoid
 /** Easy opponents also trip over their own partner now and then. */
 const BALANCED_EASY: Stats = { ...BALANCED, wontSteal: 3 };
 
-export const opponentPlayer = (skill: Skill): AiPlayer => ({ traits: skill === 'easy' ? BALANCED_EASY : BALANCED, skill });
+/** An opponent: their own dots if they have a personality, else balanced; skill from the difficulty. */
+export const opponentPlayer = (skill: Skill, traits?: Stats | null): AiPlayer => ({
+  traits: traits ?? (skill === 'easy' ? BALANCED_EASY : BALANCED),
+  skill,
+});
 
 /** Accepts an AiPlayer or a legacy id ('balanced' or a partner id). */
 const resolve = (who: AiPlayer | string): AiPlayer => {

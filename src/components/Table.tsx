@@ -85,9 +85,19 @@ export const PartnerRow: React.FC<{
   </View>
 );
 
-const OppSeat: React.FC<{ label: string; stem: string; info: SeatInfo; left: number }> = ({ label, stem, info, left }) => (
+/** Who sits in an opponent seat. */
+export interface SeatWho {
+  /** Short name on the seat tag. */
+  label: string;
+  /** Full name for screen readers. */
+  name: string;
+  stem: string;
+  mood?: 'happy' | 'neutral' | 'wince';
+}
+
+const OppSeat: React.FC<{ who: SeatWho; info: SeatInfo; left: number }> = ({ who, info, left }) => (
   <View style={{ position: 'absolute', left, top: 18 }}>
-    <Frame stem={stem} size={80} label={`${label} neighbour`} />
+    <Frame stem={who.stem} size={80} mood={who.mood} label={`${who.name}, the other side`} />
     <View
       style={{
         marginTop: 10,
@@ -101,8 +111,8 @@ const OppSeat: React.FC<{ label: string; stem: string; info: SeatInfo; left: num
       }}
     >
       <T size={11} fixed center style={{ lineHeight: 14 }}>
-        <T x fixed size={11}>
-          {label}
+        <T x fixed size={11} numberOfLines={1}>
+          {who.label}
         </T>
         {`\nPromised ${info.promise}\nWon ${info.won}\n${info.cards} cards`}
         {info.thinking ? '\nthinking…' : ''}
@@ -125,12 +135,15 @@ export const TableScene: React.FC<{
   plays: Play[];
   winnerSeat: number | null;
   maxH?: number;
+  /** Opponents in the seats (default: the two neighbours, as in the tutorial). */
+  leftWho?: SeatWho;
+  rightWho?: SeatWho;
   children?: React.ReactNode;
-}> = ({ left, right, plays, winnerSeat, maxH, children }) => (
+}> = ({ left, right, plays, winnerSeat, maxH, leftWho, rightWho, children }) => (
   <Scaled w={390} h={252} maxH={maxH}>
     <Pix uri={IMAGES.scene} size={390} h={252} label="Backyard picnic table" />
-    <OppSeat label="Left" stem="p-nbrL" info={left} left={8} />
-    <OppSeat label="Right" stem="p-nbrR" info={right} left={298} />
+    <OppSeat who={leftWho ?? { label: 'Left', name: 'Left neighbour', stem: 'p-nbrL' }} info={left} left={8} />
+    <OppSeat who={rightWho ?? { label: 'Right', name: 'Right neighbour', stem: 'p-nbrR' }} info={right} left={298} />
     {plays.map((p) => (
       <View key={`${p.seat}`} style={{ position: 'absolute', ...SLOT_POS[p.seat] }}>
         <PixelCard card={p.card} size="sm" win={winnerSeat === p.seat} fade={winnerSeat !== null && winnerSeat !== p.seat} />

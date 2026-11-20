@@ -15,6 +15,7 @@ import {
 import { chooseCard, choosePromise, makeRand, opponentPlayer, type AiPlayer } from './ai';
 import { partnerById, type Stats } from '../constants/partners';
 import { type Difficulty } from '../constants/difficulty';
+import { castById, pickOpponents } from '../constants/cast';
 import { gameWinner, scoreDeal } from './scoring';
 
 export const YOU = 0;
@@ -88,6 +89,8 @@ export interface GameState {
   seed: number;
   /** Every card played so far this deal (for card counting). */
   playedCards: Card[];
+  /** Cast ids of the opponents: [left, right]. Drawn at random per game. */
+  opponents: [string, string];
 }
 
 export interface NewGameOptions {
@@ -102,6 +105,8 @@ export interface NewGameOptions {
   seed?: number;
   /** Deal number (varies the AI's chances from deal to deal). */
   dealNumber?: number;
+  /** Opponent cast ids [left, right]; drawn from the seed when omitted. */
+  opponents?: [string, string];
   /** Fixed hands for the tutorial / tests: [you, left, partner, right]. */
   fixedHands?: Card[][];
   dealerSeat?: number;
@@ -124,11 +129,13 @@ export const createGame = (opts: NewGameOptions): GameState => {
   const partnerTraits = opts.partnerTraits ?? partnerById(opts.partnerId).stats;
   const seed = opts.seed ?? Math.floor(Math.random() * 2 ** 31);
   const deal = opts.dealNumber ?? 1;
+  const opponents = opts.opponents ?? pickOpponents(opts.partnerId, makeRand(seed ^ 0x5eed));
+  const opp = (seat: number) => opponentPlayer(difficulty, castById(opponents[seat === LEFT ? 0 : 1]).stats);
   const promises: (number | null)[] = [null, null, null, null];
   const promiseRand = (seat: number) => makeRand(seed + deal * 1009 + seat * 97 + 7);
-  promises[LEFT] = choosePromise(hands[LEFT], opponentPlayer(difficulty), promiseRand(LEFT));
+  promises[LEFT] = choosePromise(hands[LEFT], opp(LEFT), promiseRand(LEFT));
   promises[PARTNER] = choosePromise(hands[PARTNER], { traits: partnerTraits, skill: 'normal' }, promiseRand(PARTNER));
-  promises[RIGHT] = choosePromise(hands[RIGHT], opponentPlayer(difficulty), promiseRand(RIGHT));
+  promises[RIGHT] = choosePromise(hands[RIGHT], opp(RIGHT), promiseRand(RIGHT));
   return {
     partnerId: opts.partnerId,
     dealNumber: deal,
@@ -156,6 +163,7 @@ export const createGame = (opts: NewGameOptions): GameState => {
     partnerTraits,
     seed,
     playedCards: [],
+    opponents,
   };
 };
 
@@ -250,7 +258,9 @@ export const playAiTurn = (state: GameState): GameState => {
   const seat = state.turnSeat;
   if (state.phase !== 'play' || seat === YOU) return state;
   const player: AiPlayer =
-    seat === PARTNER ? { traits: state.partnerTraits, skill: 'normal' } : opponentPlayer(state.difficulty);
+    seat === PARTNER
+      ? { traits: state.partnerTraits, skill: 'normal' }
+      : opponentPlayer(state.difficulty, castById(state.opponents[seat === LEFT ? 0 : 1]).stats);
   const otherTeam = TEAM_OF[seat] === 'us' ? [LEFT, RIGHT] : [YOU, PARTNER];
   const partnerSeat = seat === PARTNER ? YOU : seat === YOU ? PARTNER : seat === LEFT ? RIGHT : LEFT;
   const cleanZero = (s: number) => isGoZero(state, s) && state.wonRounds[s] === 0;
@@ -364,6 +374,7 @@ export const nextDeal = (state: GameState): GameState => {
     partnerTraits: state.partnerTraits,
     seed: state.seed,
     dealNumber: state.dealNumber + 1,
+    opponents: state.opponents,
   });
   return {
     ...fresh,
