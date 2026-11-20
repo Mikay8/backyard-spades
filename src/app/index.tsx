@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { IMAGES } from '../assets/images';
 import { RankSheet, rankLine } from '../components/sheets';
-import { Avatar, Bar, BtnP, BtnS, Coin, Frame, LinkBtn, Pix, Screen, T, Wordmark } from '../components/ui';
+import { Avatar, Bar, BtnP, BtnS, Coin, DevBadge, Frame, LinkBtn, Pix, Screen, T, Wordmark, coinsText } from '../components/ui';
 import { COLORS } from '../constants/theme';
 import { PARTNERS, partnerById, xpIntoRank } from '../constants/partners';
 import { useApp } from '../state/store';
@@ -21,6 +21,7 @@ export default function Home() {
   return (
     <Screen contentStyle={{ paddingTop: 22, gap: 10 }} overlay={<RankSheet visible={showRank} onClose={() => setShowRank(false)} />}>
       <Wordmark size={36} />
+      <DevBadge />
       {firstRun && !last ? <T size={14}>Pick a partner from the family. Promise rounds. Win the game.</T> : null}
 
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'stretch' }}>
@@ -38,12 +39,12 @@ export default function Home() {
         <Pressable
           onPress={() => router.push('/family')}
           accessibilityRole="button"
-          accessibilityLabel={`${profile.coins} Coins, open the family`}
+          accessibilityLabel={`${coinsText(profile.coins)} Coins, open the family`}
           style={{ width: 124, backgroundColor: COLORS.paper, borderWidth: 3, borderColor: COLORS.ink, borderRadius: 8, padding: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
         >
           <Coin />
           <T x size={14}>
-            {profile.coins} Coins
+            {coinsText(profile.coins)} Coins
           </T>
         </Pressable>
       </View>

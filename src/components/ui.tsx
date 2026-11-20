@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IMAGES } from '../assets/images';
 import { OVERLAYS } from '../assets/overlays';
 import { COLORS, CVM, FONT, PHONE_W } from '../constants/theme';
+import { DEV_UNLOCK_ALL } from '../constants/devmode';
 import { STAT_LABELS, STAT_ORDER, type PartnerDef, type Stats } from '../constants/partners';
 import { isRed, rankLabel, SUIT_NAME, type Card } from '../engine/cards';
 import { useApp } from '../state/store';
@@ -396,6 +397,34 @@ export const Frame: React.FC<{
 );
 
 export const Coin: React.FC<{ size?: number }> = ({ size = 18 }) => <Pix uri={IMAGES.coin} size={size} />;
+
+/** Coins as the player sees them: ∞ in the dev build, the real count
+ *  elsewhere. The dev balance itself is DEV_COINS (see devmode.ts). */
+export const coinsText = (coins: number): string => (DEV_UNLOCK_ALL ? '∞' : String(coins));
+
+/** Dev-build marker — renders nothing in production. Only the Railway
+ *  development build sets EXPO_PUBLIC_DEV_UNLOCK_ALL=1, so this pill
+ *  proves at a glance which build you are looking at. */
+export const DevBadge: React.FC = () => {
+  if (!DEV_UNLOCK_ALL) return null;
+  return (
+    <View
+      style={{
+        backgroundColor: '#7C3AED',
+        borderWidth: 3,
+        borderColor: COLORS.ink,
+        borderRadius: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        alignSelf: 'flex-start',
+      }}
+    >
+      <T px fixed size={10} color="#fff">
+        DEV BUILD - UNLIMITED COINS, ALL PARTNERS UNLOCKED
+      </T>
+    </View>
+  );
+};
 
 export const SuitImg: React.FC<{ suit: Card['suit']; size?: number }> = ({ suit, size = 16 }) => (
   <Pix uri={IMAGES[`s-${suit}`]} size={size} label={SUIT_NAME[suit]} />

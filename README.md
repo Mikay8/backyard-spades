@@ -9,7 +9,7 @@ Design brief (the contract): `~/workspace/your_files/backyard-spades-design-spec
 ```bash
 npm install
 npx expo start --web        # web (fully playable)
-npm test                    # Jest — 49 tests
+npm test                    # Jest — 55 tests
 npm run typecheck           # tsc --noEmit
 npm run lint                # expo lint
 npm run build:web           # expo export --platform web → dist/
@@ -43,3 +43,36 @@ Also note: the repo `Mikay8/backyard-spades` is **public**, not private like Fla
 - Scoring: a go-zero player's rounds do not count toward the team promise — brief §8.2 proves it (June wins 1, team made 6 → -40, not -39). Implemented that way in `src/engine/game.ts` (`teamWon`).
 - Bundle IDs (`game.backyardspades.app`) are a proposal, not decided.
 - Palette follows the brief §15 proposal (backyard at golden hour); Mikayla has not locked colours.
+
+## Development environment (Railway) — dev-only infinite Coins
+
+Branching mirrors Flapjack21: feature work lands on `develop`, which the
+Railway **development** environment deploys; merging `develop` → `main`
+ships to the production URL. Never merge dev-only behaviour to `main`
+without checking it is flag-gated.
+
+The development build sets one extra service variable:
+
+- `EXPO_PUBLIC_DEV_UNLOCK_ALL=1` (+ `CI=true`, same as production)
+
+What it does (`src/constants/devmode.ts`, flag-gated, no in-app switch):
+
+- Every partner is owned from the start, so all 8 can be play-tested
+  without grinding rank + Coins. Buying a partner is free and ignores
+  rank gates; Shed items are covered by a 999,999-Coin dev balance
+  (all partners 505 + all items ~355 + Cheater's Mirror 1000).
+- Coins display as ∞ on Home, Family, Shed, Result and the Buy sheet,
+  with a purple "DEV BUILD - UNLIMITED COINS, ALL PARTNERS UNLOCKED"
+  badge on Home, Pick, Family and Shed so the dev build is unmistakable.
+- **Rank choosing (Settings → Development, dev only):** a − / + stepper
+  plus Rank 1 / 5 / 10 / 15 jumps set your rank for testing (Rank 5: see
+  the partner's promise; Rank 10: favourite + review; Rank 15: table
+  themes + card backs). Implemented as `setRank` in the store (XP set to
+  the start of the chosen rank via `xpForRank`); it no-ops when the flag
+  is off, and the whole section renders only in the dev build.
+
+Why production is safe: Expo inlines `EXPO_PUBLIC_*` variables into the
+bundle at build time, and the production environment never sets this
+variable — verified: a build without it compiles the flag to a literal
+`false` (`DEV_UNLOCK_ALL` getter returns `!1` in the bundle). **Never
+set `EXPO_PUBLIC_DEV_UNLOCK_ALL` on the production service.**

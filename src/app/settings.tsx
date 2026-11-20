@@ -5,7 +5,7 @@ import { goBack } from '../navigation';
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Lock } from '../components/PartnerCard';
-import { BtnS, Coin, Header, Screen, Sheet, T, Toggle, usePalette } from '../components/ui';
+import { BtnS, Coin, DevBadge, Header, Screen, Sheet, T, Toggle, usePalette } from '../components/ui';
 import { COLORS } from '../constants/theme';
 import { DIFFICULTIES, effectiveDifficulty, isBelow, minDifficultyForRank, difficultyDef } from '../constants/difficulty';
 import { useApp } from '../state/store';
@@ -151,7 +151,7 @@ const DifficultyPicker: React.FC = () => {
 };
 
 export default function Settings() {
-  const { settings, updateSettings, rank, resetAll } = useApp();
+  const { settings, updateSettings, rank, resetAll, devUnlockAll, setRank } = useApp();
   const pal = usePalette();
   const [confirmReset, setConfirmReset] = useState(false);
   const unlocked = rank >= 15;
@@ -184,6 +184,37 @@ export default function Settings() {
         </Sheet>
       }
     >
+      {devUnlockAll ? (
+        <>
+          <DevBadge />
+          <H t="Development" />
+          <T size={13} style={{ paddingBottom: 6 }}>
+            Choose your rank to test what each rank unlocks. Only in the dev build.
+          </T>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <BtnS label="−" size={18} disabled={rank <= 1} onPress={() => setRank(rank - 1)} />
+            </View>
+            <T x size={16} center style={{ minWidth: 72 }}>
+              Rank {rank}
+            </T>
+            <View style={{ flex: 1 }}>
+              <BtnS label="+" size={18} disabled={rank >= 15} onPress={() => setRank(rank + 1)} />
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+            {[1, 5, 10, 15].map((r) => (
+              <View key={r} style={{ flex: 1 }}>
+                <BtnS label={`Rank ${r}`} size={12} disabled={rank === r} onPress={() => setRank(r)} />
+              </View>
+            ))}
+          </View>
+          <T size={12} style={{ paddingTop: 6 }}>
+            Rank 5: see your partner&apos;s promise. Rank 10: favourite partner + partner review. Rank 15:
+            table themes + card backs.
+          </T>
+        </>
+      ) : null}
       <H t="Game" />
       <Choice
         t="Game length"

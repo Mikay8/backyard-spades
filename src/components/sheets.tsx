@@ -3,7 +3,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { PARTNERS, partnerById, xpIntoRank } from '../constants/partners';
 import { useApp } from '../state/store';
-import { Avatar, Bar, BtnP, BtnS, Divider, IconBtn, Note, Sheet, T } from './ui';
+import { Avatar, Bar, BtnP, BtnS, Divider, IconBtn, Note, Sheet, T, coinsText } from './ui';
 
 export const rankLine = (rank: number, xp: number) => `Rank ${rank} — ${100 - xpIntoRank(xp)} XP to Rank ${rank + 1}`;
 
@@ -89,13 +89,13 @@ export const BuySheet: React.FC<{
             Buy {p.name} for {p.price} Coins?
           </T>
           <T size={13} style={{ marginTop: 4 }}>
-            You have {profile.coins} Coins.
+            You have {coinsText(profile.coins)} Coins.
           </T>
         </View>
       </View>
       {short ? (
         <T size={13}>
-          You have {profile.coins} Coins — you need {p.price}. Play more games to earn Coins.
+          You have {coinsText(profile.coins)} Coins — you need {p.price}. Play more games to earn Coins.
         </T>
       ) : null}
       {rankShort ? <T size={13}>Play more games to reach Rank {p.unlockRank}.</T> : null}

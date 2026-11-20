@@ -11,6 +11,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { DEV_COINS, DEV_UNLOCK_ALL } from '../constants/devmode';
 import {
   GO_ZERO_WIN_COINS_BONUS,
   GO_ZERO_WIN_XP_BONUS,
@@ -22,6 +23,7 @@ import {
   partnerById,
   rankForXp,
   type PartnerDef,
+  xpForRank,
 } from '../constants/partners';
 import { effectiveStats, itemById } from '../constants/items';
 import { difficultyDef, effectiveDifficulty, type Difficulty } from '../constants/difficulty';
@@ -74,6 +76,15 @@ export const EMPTY_PROFILE: Profile = {
   mirror: 0,
   picked: 'grandma',
 };
+
+/** Dev-only (Railway development env): every partner owned from the start
+ *  with a bottomless Coin balance, so all 8 partners (and Shed items) can
+ *  be play-tested without grinding rank + Coins. Production never sets the
+ *  flag, so this is exactly EMPTY_PROFILE there. */
+const ALL_PARTNER_IDS = PARTNERS.map((p) => p.id);
+const INITIAL_PROFILE: Profile = DEV_UNLOCK_ALL
+  ? { ...EMPTY_PROFILE, owned: ALL_PARTNER_IDS, coins: DEV_COINS }
+  : EMPTY_PROFILE;
 
 export interface Settings {
   sound: boolean;
@@ -146,6 +157,8 @@ interface AppContextValue {
   settings: Settings;
   loaded: boolean;
   rank: number;
+  /** True only in the dev build (EXPO_PUBLIC_DEV_UNLOCK_ALL=1). */
+  devUnlockAll: boolean;
   game: GameState | null;
   result: GameResult | null;
   /** Last finished game, kept after a new game starts so Home's last-game
@@ -165,6 +178,9 @@ interface AppContextValue {
   equipItem: (itemId: string, partnerId: string) => void;
   /** Spend one Cheater's Mirror peek. */
   spendMirror: () => void;
+  /** Dev-only: jump to a rank for testing (Settings → Development).
+   *  No-op in production. Sets XP to the start of that rank. */
+  setRank: (rank: number) => void;
   setPicked: (partnerId: string) => void;
 }
 
@@ -195,7 +211,7 @@ export const partnerReviewLines = (g: GameState): { line1: string; line2: string
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
+  const [profile, setProfile] = useState<Profile>(INITIAL_PROFILE);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loaded, setLoaded] = useState(false);
   const [game, setGameState] = useState<GameState | null>(null);
@@ -215,7 +231,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProfile({
           ...EMPTY_PROFILE,
           ...p,
-          owned: Array.from(new Set(['grandma', 'dre', ...(p.owned ?? [])])),
+          // Dev-only: a saved dev profile already owns everyone; a fresh
+          // dev install (or a profile carried over from prod) gets them all
+          // plus the bottomless balance.
+          owned: DEV_UNLOCK_ALL
+            ? ALL_PARTNER_IDS
+            : Array.from(new Set(['grandma', 'dre', ...(p.owned ?? [])])),
+          coins: DEV_UNLOCK_ALL ? DEV_COINS : p.coins,
         });
       }
       if (s) setSettings({ ...DEFAULT_SETTINGS, ...s });
@@ -327,8 +349,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     (partnerId: string): boolean => {
       const p = profileRef.current;
       const def = partnerById(partnerId);
-      const rank = rankForXp(p.xp);
       if (p.owned.includes(partnerId)) return true;
+      // Dev-only: buying is free and ignores the rank gate.
+      if (DEV_UNLOCK_ALL) {
+        saveProfile({ ...p, owned: [...p.owned, partnerId] });
+        return true;
+      }
+      const rank = rankForXp(p.xp);
       if (rank < def.unlockRank || p.coins < def.price) return false;
       saveProfile({ ...p, coins: p.coins - def.price, owned: [...p.owned, partnerId] });
       return true;
@@ -396,8 +423,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [saveProfile],
   );
 
+  const setRank = useCallback(
+    (rank: number) => {
+      if (!DEV_UNLOCK_ALL) return;
+      const p = profileRef.current;
+      const xp = xpForRank(rank);
+      if (p.xp !== xp) saveProfile({ ...p, xp });
+    },
+    [saveProfile],
+  );
+
   const resetAll = useCallback(() => {
-    saveProfile(EMPTY_PROFILE);
+    saveProfile(INITIAL_PROFILE);
     setSettings(DEFAULT_SETTINGS);
     void setJSON(SETTINGS_KEY, DEFAULT_SETTINGS);
     setGameState(null);
@@ -411,6 +448,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       settings,
       loaded,
       rank: rankForXp(profile.xp),
+      devUnlockAll: DEV_UNLOCK_ALL,
       game,
       result,
       lastResult,
@@ -425,9 +463,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       buyItem,
       equipItem,
       spendMirror,
+      setRank,
       setPicked,
     }),
-    [profile, settings, loaded, game, result, lastResult, startGame, setGame, finishGame, buyPartner, setFavourite, updateSettings, markTutorialDone, resetAll, buyItem, equipItem, spendMirror, setPicked],
+    [profile, settings, loaded, game, result, lastResult, startGame, setGame, finishGame, buyPartner, setFavourite, updateSettings, markTutorialDone, resetAll, buyItem, equipItem, spendMirror, setRank, setPicked],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
