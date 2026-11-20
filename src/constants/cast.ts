@@ -1,6 +1,6 @@
 // Everyone who can sit at the table. Each game draws two opponents at random
 // from this cast (never your partner); they keep their seats for the game.
-// Family members (Grandpa Bill included) play with their own stat dots;
+// Family members (Grandpa included) play with their own stat dots;
 // the neighbours are balanced.
 import { PARTNERS, type Stats } from './partners';
 
@@ -15,7 +15,7 @@ export interface CastMember {
   stats: Stats | null;
 }
 
-const shortName = (name: string) => (name === 'Grandma Rose' ? 'Grandma' : name.split(' ').pop() ?? name);
+const shortName = (name: string) => name.split(' ').pop() ?? name;
 
 export const CAST: CastMember[] = [
   ...PARTNERS.map((p) => ({ id: p.id, name: p.name, short: shortName(p.name), portrait: p.portrait, stats: p.stats })),

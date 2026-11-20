@@ -17,7 +17,7 @@ npm run build:web           # expo export --platform web → dist/
 
 ## What's in v1
 
-- Partner balance: you get what you pay for. Each partner has a card skill (free: Normal; Marcus, Mom, Dad, Mae: Hard; Grandpa Bill, Rank 15 / 200 Coins: Expert) and dots tuned by simulation. `npm run balance` plays seeded games for every partner and fails if a pricier tier wins less often than a cheaper one (last run, Normal opponents: free ~44%, 25 Coins ~51%, 60 ~55%, 120 ~59%, Grandpa Bill ~63%).
+- Partner balance: you get what you pay for. Each partner has a card skill (free: Normal; Marcus, Mom, Dad, Mae: Hard; Grandpa, Rank 15 / 200 Coins: Expert) and dots tuned by simulation. `npm run balance` plays seeded games for every partner and fails if a pricier tier wins less often than a cheaper one (last run, Normal opponents: free ~44%, 25 Coins ~51%, 60 ~55%, 120 ~59%, Grandpa ~63%).
 - Promises: the hand estimate is fitted to ~11,600 simulated hands (the old count of aces + high spades underestimated by ~1.6 rounds), and a good promise sits 0.5 under it. 3 Bids Big dots promise exactly that; more or fewer dots over- or under-promise, and both cost games.
 
 - Difficulty (Settings → Game): Easy / Normal / Hard / Expert opponents, win pays 20 / 30 / 45 / 60 Coins. Your rank sets the minimum (Easy 1–4, Normal 5–9, Hard 10–14, Expert 15+); you can pick harder, never easier. `src/constants/difficulty.ts`.

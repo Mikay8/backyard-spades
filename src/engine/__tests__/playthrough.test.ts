@@ -14,7 +14,7 @@ import {
 import { GO_ZERO_WIN_COINS_BONUS, GO_ZERO_WIN_XP_BONUS, LOSS_COINS, LOSS_XP, WIN_XP, rankForXp } from '../../constants/partners';
 import { difficultyDef } from '../../constants/difficulty';
 
-describe('scripted playthrough with Grandma Rose', () => {
+describe('scripted playthrough with Grandma', () => {
   it('completes a full game and awards the brief §10 amounts', () => {
     // Fixed seed: the AI's chances replay the same way every run.
     let g = createGame({ partnerId: 'grandma', seed: 42, difficulty: 'normal' });

@@ -17,7 +17,7 @@ describe('partners', () => {
       }
     }
   });
-  it('there are 9 family partners, Grandpa Bill included', () => {
+  it('there are 9 family partners, Grandpa included', () => {
     expect(PARTNERS).toHaveLength(9);
     expect(PARTNERS.map((p) => p.id)).toContain('bill');
   });

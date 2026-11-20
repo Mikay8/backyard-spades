@@ -1,6 +1,6 @@
 // Game state machine — brief §§6–8. Pure functions over plain state so the
 // engine can be unit-tested and driven by the UI or by a scripted playthrough.
-// Seats: 0 = You, 1 = Left (Bill), 2 = Partner, 3 = Right (Neighbour).
+// Seats: 0 = You, 1 = Left opponent, 2 = Partner, 3 = Right opponent.
 // Play order is clockwise: 0 -> 1 -> 2 -> 3 -> 0.
 import {
   legalCards,

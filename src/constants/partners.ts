@@ -51,7 +51,7 @@ export interface PartnerDef {
 export const PARTNERS: PartnerDef[] = [
   {
     id: 'grandma',
-    name: 'Grandma Rose',
+    name: 'Grandma',
     role: 'The Steady One',
     quirk: 'Forgot her glasses again.',
     goodWith: 'Good with you if you promise big yourself — she never steals your win.',
@@ -163,7 +163,7 @@ export const PARTNERS: PartnerDef[] = [
   },
   {
     id: 'bill',
-    name: 'Grandpa Bill',
+    name: 'Grandpa',
     role: 'The Old Pro',
     quirk: '“Was that hearts?” He mumbles — then plays the perfect card.',
     goodWith: 'Good with you if you want the best partner at the table — he reads the whole game.',
@@ -212,7 +212,7 @@ export const RANK_ADVANTAGES: RankAdvantage[] = [
   { rank: 8, label: 'Auntie June is ready to buy (60 Coins)' },
   { rank: 10, label: 'Mom is ready to buy (120 Coins) + Favourite partner + partner review' },
   { rank: 12, label: 'Dad is ready to buy (120 Coins)' },
-  { rank: 15, label: 'Little Sister Mae (120 Coins) and Grandpa Bill (200 Coins) are ready to buy + Table themes' },
+  { rank: 15, label: 'Little Sister Mae (120 Coins) and Grandpa (200 Coins) are ready to buy + Table themes' },
 ];
 
 export const nextUnlockAfter = (rank: number): PartnerDef | null =>
