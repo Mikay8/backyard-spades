@@ -12,6 +12,7 @@ import { ITEMS } from '../constants/items';
 import { PARTNERS, partnerById, stripLead } from '../constants/partners';
 import { targetFor, useApp } from '../state/store';
 import { loseFloor } from '../engine/scoring';
+import { DIFFICULTIES } from '../constants/difficulty';
 import { type Card } from '../engine/cards';
 
 const c = (suit: Card['suit'], rank: number): Card => ({ suit, rank });
@@ -234,7 +235,16 @@ export default function HowToPlay() {
       </HP>
 
       <HP n={7} title="Your partner" color="#3b6fd0">
-        <T size={14}>Each partner plays differently. Pick the one that fits your hand.</T>
+        <T size={14}>Each partner plays differently — their dots decide it. More dots means they do it more often:</T>
+        <View>
+          <HRow l="Bids Big — promises over (or, with few dots, under) the hand" r="●" ok />
+          <HRow l="Saves Spades — holds spades back instead of leading or trumping" r="●" ok />
+          <HRow l="Won't Steal Your Win — plays low when you're already winning" r="●" ok />
+          <HRow l="Avoids Extras — ducks once your team has its promise" r="●" ok />
+          <HRow l="Loves Going Zero — goes zero on weak (and less weak) hands" r="●" ok />
+          <HRow l="Leads Strong — starts rounds with a high card" r="●" ok />
+        </View>
+        <T size={12}>An item’s ◆ adds a dot, so it really changes how they play.</T>
         {PARTNERS.map((p) => (
           <View key={p.id}>
             <Divider />
@@ -285,7 +295,7 @@ export default function HowToPlay() {
       <HP n={9} title="Rank and Coins" color="#8a6a1a">
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {[
-            ['Win', '+100 XP', '+20', pal.ok],
+            ['Win', '+100 XP', '+20 to +60', pal.ok],
             ['Lose', '+25 XP', '+5', pal.bad],
             ['Zero, won none', '+50 XP', '+10', COLORS.ink],
           ].map(([h, xp, coins, col]) => (
@@ -302,6 +312,13 @@ export default function HowToPlay() {
           ))}
         </View>
         <T size={12}>Every 100 XP is a new rank. Coins buy partners and items — earned by playing only.</T>
+        <T x size={13}>Difficulty</T>
+        <T size={12}>The other side plays better as you rank up, and harder wins pay more. You can choose a harder level in Settings, never an easier one.</T>
+        <View>
+          {DIFFICULTIES.map((d) => (
+            <HRow key={d.id} l={`${d.name} (from Rank ${d.fromRank}) — ${d.blurb}`} r={`+${d.winCoins}`} ok />
+          ))}
+        </View>
       </HP>
 
       <HP bg={COLORS.sun}>

@@ -222,3 +222,30 @@ describe('tutorial fixed deal', () => {
     expect(s.points).toBe(usWon >= 7 ? 70 + (usWon - 7) : -70);
   });
 });
+
+describe('seeded AI', () => {
+  const play = (seed: number) => {
+    let g = createGame({ partnerId: 'dre', seed, difficulty: 'hard', fixedHands: TUTORIAL_HANDS });
+    g = setPlayerPromise(g, 3);
+    const moves: string[] = [];
+    for (let i = 0; i < 20 && g.phase === 'play'; i++) {
+      if (g.turnSeat === YOU) g = playCard(g, YOU, legalForTurn(g)[0]);
+      else g = playAiTurn(g);
+      moves.push(g.playedCards.map((c) => `${c.suit}${c.rank}`).join(','));
+    }
+    return { promises: g.promises.join(','), moves: moves.join('|') };
+  };
+  it('the same seed replays the same game', () => {
+    expect(play(7)).toEqual(play(7));
+  });
+  it('the game carries its difficulty and partner dots to the next deal', () => {
+    const g = createGame({ partnerId: 'dre', seed: 1, difficulty: 'expert', target: 250 });
+    const done = { ...g, phase: 'dealScore' as const };
+    const n = nextDeal(done);
+    expect(n.difficulty).toBe('expert');
+    expect(n.partnerTraits).toEqual(g.partnerTraits);
+    expect(n.seed).toBe(1);
+    expect(n.dealNumber).toBe(2);
+    expect(n.playedCards).toEqual([]);
+  });
+});

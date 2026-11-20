@@ -17,6 +17,9 @@ npm run build:web           # expo export --platform web → dist/
 
 ## What's in v1
 
+- Difficulty (Settings → Game): Easy / Normal / Hard / Expert opponents, win pays 20 / 30 / 45 / 60 Coins. Your rank sets the minimum (Easy 1–4, Normal 5–9, Hard 10–14, Expert 15+); you can pick harder, never easier. `src/constants/difficulty.ts`.
+- The AI plays from the stat dots (`src/engine/ai.ts`): each dot value is a chance (e.g. Won't Steal 2 → takes your covered round ~75% of the time), item ◆ boosts included. Opponents use balanced dots plus a skill layer (Easy blunders, Hard counts cards / leads winners / second-hand low, Expert also hunts go-zero). Chances come from a per-game seed, so a game is reproducible.
+
 - Visual design: the "Family Card Night — 16-bit Pixel Art" design canvas — Press Start 2P + Nunito, ink outlines with hard shadows, wood-framed pixel portraits, pixel playing cards, phone-width layout centred on wide screens. Shared kit in `src/components/ui.tsx`, table pieces in `src/components/Table.tsx`.
 - The Shed (`/shed`): buy items with Coins, equip one per partner (+1 to one or two stats, shown as ◆ and drawn on the portrait); Cheater's Mirror gives a one-time peek at every hand in a game. Partner detail screen (`/partner`). Item stat boosts are display-only — the AI still plays from base stats.
 

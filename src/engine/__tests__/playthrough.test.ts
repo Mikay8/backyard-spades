@@ -11,14 +11,16 @@ import {
   setPlayerPromise,
   YOU,
 } from '../game';
-import { GO_ZERO_WIN_COINS_BONUS, GO_ZERO_WIN_XP_BONUS, LOSS_COINS, LOSS_XP, WIN_COINS, WIN_XP, rankForXp } from '../../constants/partners';
+import { GO_ZERO_WIN_COINS_BONUS, GO_ZERO_WIN_XP_BONUS, LOSS_COINS, LOSS_XP, WIN_XP, rankForXp } from '../../constants/partners';
+import { difficultyDef } from '../../constants/difficulty';
 
 describe('scripted playthrough with Grandma Rose', () => {
   it('completes a full game and awards the brief §10 amounts', () => {
-    let g = createGame({ partnerId: 'grandma' });
+    // Fixed seed: the AI's chances replay the same way every run.
+    let g = createGame({ partnerId: 'grandma', seed: 42, difficulty: 'normal' });
     let actions = 0;
     let firstDealScored = false;
-    while (g.phase !== 'gameOver' && actions < 2000) {
+    while (g.phase !== 'gameOver' && actions < 5000) {
       actions += 1;
       if (g.phase === 'promise') {
         const promise = Math.min(13, estimateWinners(g.hands[YOU]));
@@ -40,13 +42,15 @@ describe('scripted playthrough with Grandma Rose', () => {
       }
     }
     expect(g.phase).toBe('gameOver');
+    expect(g.difficulty).toBe('normal');
     expect(g.winner).not.toBeNull();
     expect(g.dealHistory.length).toBeGreaterThanOrEqual(1);
-    expect(actions).toBeLessThan(2000);
+    expect(actions).toBeLessThan(5000);
 
     const won = g.winner === 'us';
     const goZeroBonus = won && g.playerWentZeroClean;
     const xpEarned = (won ? WIN_XP : LOSS_XP) + (goZeroBonus ? GO_ZERO_WIN_XP_BONUS : 0);
+    const WIN_COINS = difficultyDef(g.difficulty).winCoins; // Normal: 30
     const coinsEarned = (won ? WIN_COINS : LOSS_COINS) + (goZeroBonus ? GO_ZERO_WIN_COINS_BONUS : 0);
     // A fresh player starts at Rank 1; one win takes them to Rank 2.
     expect(rankForXp(xpEarned)).toBe(won ? 2 : 1);

@@ -9,6 +9,7 @@ import { Avatar, Bar, BtnP, BtnS, Coin, Frame, IconBtn, Note, Panel, Screen, She
 import { COLORS, FONT } from '../constants/theme';
 import { partnerById, xpIntoRank } from '../constants/partners';
 import { useApp } from '../state/store';
+import { difficultyDef, minDifficultyForRank } from '../constants/difficulty';
 
 const fmt = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
@@ -47,6 +48,9 @@ export default function Result() {
   }
 
   const rankedUp = res.rankAfter > res.rankBefore;
+  const floorBefore = minDifficultyForRank(res.rankBefore);
+  const floorAfter = minDifficultyForRank(res.rankAfter);
+  const levelUp = floorAfter !== floorBefore ? floorAfter : null;
   const unlock = res.newlyBuyable[0] ?? null;
   const item = profile.equip[p.id];
   const missedBy = lastDeal ? Math.max(0, lastDeal.usPromise - lastDeal.usWon) : 0;
@@ -153,6 +157,11 @@ export default function Result() {
           <T x size={15}>
             {unlock ? `Rank ${res.rankAfter} reached — ${unlock.name} is ready to buy!` : `Rank ${res.rankAfter} reached!`}
           </T>
+          {levelUp ? (
+            <T size={14} style={{ marginTop: 4 }}>
+              The other side gets tougher: you now play at {difficultyDef(levelUp).name} or harder — wins pay {difficultyDef(levelUp).winCoins} Coins.
+            </T>
+          ) : null}
         </View>
       ) : null}
 
@@ -165,6 +174,11 @@ export default function Result() {
           → {profile.coins} Coins
         </T>
       </View>
+      {res.difficulty ? (
+        <T size={13} style={{ marginTop: -8 }}>
+          {difficultyDef(res.difficulty).name} game — {res.won ? `a win at this level pays ${difficultyDef(res.difficulty).winCoins}` : 'a loss pays 5 at any level'}.
+        </T>
+      ) : null}
       <View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <T x size={13}>
