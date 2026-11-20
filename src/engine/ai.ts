@@ -79,7 +79,19 @@ export interface AiContext {
   partnerGoingZero?: boolean;
   /** Seats on the other team still on track for a go-zero (Expert hunts them). */
   zeroTargets?: number[];
+  /** Finished rounds this deal (Expert reads who has run out of a suit). */
+  rounds?: Play[][];
 }
+
+/** Suits each seat has shown out of (didn't follow when it was led). */
+export const knownVoids = (rounds: Play[][]): Record<number, Set<Suit>> => {
+  const v: Record<number, Set<Suit>> = { 0: new Set(), 1: new Set(), 2: new Set(), 3: new Set() };
+  for (const r of rounds) {
+    const led = r[0].card.suit;
+    for (const p of r) if (p.card.suit !== led) v[p.seat].add(led);
+  }
+  return v;
+};
 
 export interface AiChoice {
   card: Card;
@@ -120,30 +132,57 @@ const isBoss = (card: Card, hand: Card[], played: Card[]): boolean =>
 
 // ───────────────────────────── Promise
 
-/** Likely winners. Normal: aces + high spades (+1 for 5+ spades). Hard+: also guarded kings and long spades. */
-export const estimateFor = (hand: Card[], skill: Skill): number => {
-  let n = 0;
-  const bySuit = (s: Suit) => hand.filter((c) => c.suit === s);
-  for (const c of hand) {
-    if (c.rank === 14) n += 1;
-    else if (c.suit === 'S' && c.rank >= 12) n += 1;
+/** Likely winners in a hand.
+ *  Normal and up: weights fitted from ~11,600 simulated hands (each card's
+ *  real worth in rounds won) — e.g. ace 0.8, A♠ 1.1, guarded king 0.5,
+ *  every spade 0.3 plus 0.4 for each spade past 3.
+ *  Easy: the old rough count (aces + high spades), which underbids by about
+ *  1.6 rounds — one of the ways Easy opponents are weaker. */
+export const estimateFor = (hand: Card[], skill: Skill): number => Math.max(0, Math.min(13, Math.round(estimateRaw(hand, skill))));
+
+/** Unrounded estimate (see estimateFor). */
+export const estimateRaw = (hand: Card[], skill: Skill): number => {
+  const has = (s: Suit, r: number) => hand.some((c) => c.suit === s && c.rank === r);
+  const len = (s: Suit) => hand.filter((c) => c.suit === s).length;
+  const spades = len('S');
+  if (skill === 'easy') {
+    let n = 0;
+    for (const c of hand) if (c.rank === 14 || (c.suit === 'S' && c.rank >= 12)) n += 1;
+    if (spades >= 5) n += 1;
+    return n;
   }
-  const spades = bySuit('S').length;
-  if (spades >= 5) n += 1;
-  if (skill === 'hard' || skill === 'expert') {
-    for (const s of ['H', 'D', 'C'] as Suit[]) {
-      const cards = bySuit(s);
-      if (cards.some((c) => c.rank === 13) && cards.length >= 2 && cards.length <= 5) n += 0.5;
-    }
-    if (spades >= 7) n += 1;
+  let n = 0.1;
+  for (const s of ['H', 'D', 'C'] as Suit[]) {
+    if (has(s, 14)) n += 0.83;
+    if (has(s, 13)) n += len(s) >= 2 ? 0.5 : 0.41;
+    if (has(s, 12) && len(s) >= 3) n += 0.32;
+    if (len(s) === 0) n += 0.11;
   }
-  return Math.min(13, Math.round(n));
+  if (has('S', 14)) n += 1.08;
+  if (has('S', 13)) n += 0.8;
+  if (has('S', 12)) n += 0.65;
+  if (has('S', 11)) n += 0.35;
+  n += 0.3 * spades + 0.42 * Math.max(0, spades - 3);
+  return n;
 };
+
+/** How far under the estimate a good promise sits. A missed promise costs
+ *  10 per round promised while an extra round only adds 1, so promising a
+ *  little low pays. Simulated: with everyone shading 0.5, a team gains
+ *  nothing by bidding further under or over — the stable point. */
+export const BID_SHADE = 0.5;
+
+/** The promise a sensible player would make: estimate shaded down (≥ 1).
+ *  Used as the human hint and as what 3 Bids Big dots promise. */
+export const suggestedPromise = (hand: Card[]): number =>
+  Math.max(1, Math.min(13, Math.round(estimateRaw(hand, 'normal') - BID_SHADE)));
 
 /** Promise for an AI seat. 0 = go zero. */
 export const choosePromise = (hand: Card[], who: AiPlayer | string, rand: Rand = MEDIAN): number => {
   const { traits, skill } = resolve(who);
   const est = estimateFor(hand, skill);
+  // Easy keeps its rough count as-is; everyone else starts from the shaded "good promise".
+  const base = skill === 'easy' ? est : estimateRaw(hand, skill) - BID_SHADE;
   const clamp = (n: number) => Math.max(1, Math.min(13, n));
 
   // Loves Going Zero: the more dots, the stronger a hand they'll go zero on.
@@ -153,11 +192,11 @@ export const choosePromise = (hand: Card[], who: AiPlayer | string, rand: Rand =
   const safeForZero = !spades.some((c) => c.rank >= 13) && spades.length <= 3;
   if (est <= zeroMax && safeForZero && chance(zeroChance, rand)) return 0;
 
-  // Bids Big: 1 dot → promise 1 under, 3 → exact, 5 → 1 over. Half-steps by chance.
-  const offset = (traits.bidsBig - 3) / 2;
-  let promise = est + Math.trunc(offset);
-  const frac = Math.abs(offset % 1);
-  if (frac > 0 && chance(frac, rand)) promise += Math.sign(offset);
+  // Bids Big: 3 dots → the good promise, 1 → a round under it, 5 → a round over.
+  // Fractions resolve by chance (Bids Big 4 is half a round over: +1 half the time).
+  const target = base + (traits.bidsBig - 3) / 2;
+  let promise = Math.floor(target);
+  if (chance(target - promise, rand)) promise += 1;
 
   // Easy seats misjudge their hand.
   if (skill === 'easy' && chance(0.5, rand)) promise += chance(0.5, rand) ? 1 : -1;
@@ -182,10 +221,27 @@ const chooseLead = (p: AiPlayer, ctx: AiContext, legal: Card[], rand: Rand): Car
   // Low Saves Spades → leads spades as soon as they're allowed.
   if (spades.length > 0 && chance(1 - u(traits.savesSpades), rand)) return highest(spades);
 
+  // Expert: read who has run out of what. Lead low into a suit your partner
+  // can trump; steer clear of suits an opponent can trump.
+  if (skill === 'expert' && ctx.rounds && ctx.rounds.length > 0) {
+    const voids = knownVoids(ctx.rounds);
+    const opps = [0, 1, 2, 3].filter((x) => x !== ctx.mySeat && x !== ctx.partnerSeat);
+    const spadesLeft = unseen(ctx.hand, played).some((c) => c.suit === 'S');
+    const oppCanTrump = (s: Suit) => s !== 'S' && spadesLeft && opps.some((o) => voids[o].has(s));
+    const partnerCanTrump = (s: Suit) => s !== 'S' && voids[ctx.partnerSeat].has(s) && !oppCanTrump(s);
+    const feed = side.filter((c) => partnerCanTrump(c.suit));
+    if (feed.length > 0) return lowest(feed);
+    const safe = side.filter((c) => !oppCanTrump(c.suit));
+    const safeBosses = safe.filter((c) => isBoss(c, ctx.hand, played));
+    if (safeBosses.length > 0) return highest(safeBosses);
+    if (safe.length > 0 && safe.length < side.length) return lowest(safe);
+  }
+
   // Hard+: cash a sure winner first.
   if (smart) {
     const bosses = side.filter((c) => isBoss(c, ctx.hand, played));
-    if (bosses.length > 0 && chance(0.5 + u(traits.leadsStrong) / 2, rand)) return highest(bosses);
+    // Hard cashes them often (more with Leads Strong); Expert always does.
+    if (bosses.length > 0 && (skill === 'expert' || chance(0.5 + u(traits.leadsStrong) / 2, rand))) return highest(bosses);
   }
   // Leads Strong → high card, otherwise low.
   if (chance(u(traits.leadsStrong), rand)) return highest(side);
@@ -268,4 +324,4 @@ export const chooseCard = (who: AiPlayer | string, ctx: AiContext, rand: Rand = 
 };
 
 /** Human hint for the promise picker: a plain count of likely winners. */
-export const likelyWinnersHint = (hand: Card[]): number => estimateFor(hand, 'normal');
+export const likelyWinnersHint = (hand: Card[]): number => suggestedPromise(hand);

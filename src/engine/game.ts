@@ -85,10 +85,14 @@ export interface GameState {
   difficulty: Difficulty;
   /** The partner's stat dots for this game (item boost included) — the AI plays from these. */
   partnerTraits: Stats;
+  /** How well the partner plays the cards (pricier partners play better). */
+  partnerSkill: Difficulty;
   /** Seeds the AI's chances so a game is reproducible. */
   seed: number;
   /** Every card played so far this deal (for card counting). */
   playedCards: Card[];
+  /** Finished rounds this deal, in order (who played what — for spotting empty suits). */
+  rounds: Play[][];
   /** Cast ids of the opponents: [left, right]. Drawn at random per game. */
   opponents: [string, string];
 }
@@ -102,6 +106,8 @@ export interface NewGameOptions {
   difficulty?: Difficulty;
   /** Partner dots incl. item boost (default: the partner's own dots). */
   partnerTraits?: Stats;
+  /** Partner card skill (default: the partner's own). */
+  partnerSkill?: Difficulty;
   seed?: number;
   /** Deal number (varies the AI's chances from deal to deal). */
   dealNumber?: number;
@@ -127,6 +133,7 @@ export const createGame = (opts: NewGameOptions): GameState => {
   // AI promises are made at deal start (partner + both opponents).
   const difficulty = opts.difficulty ?? 'normal';
   const partnerTraits = opts.partnerTraits ?? partnerById(opts.partnerId).stats;
+  const partnerSkill = opts.partnerSkill ?? partnerById(opts.partnerId).skill;
   const seed = opts.seed ?? Math.floor(Math.random() * 2 ** 31);
   const deal = opts.dealNumber ?? 1;
   const opponents = opts.opponents ?? pickOpponents(opts.partnerId, makeRand(seed ^ 0x5eed));
@@ -134,7 +141,7 @@ export const createGame = (opts: NewGameOptions): GameState => {
   const promises: (number | null)[] = [null, null, null, null];
   const promiseRand = (seat: number) => makeRand(seed + deal * 1009 + seat * 97 + 7);
   promises[LEFT] = choosePromise(hands[LEFT], opp(LEFT), promiseRand(LEFT));
-  promises[PARTNER] = choosePromise(hands[PARTNER], { traits: partnerTraits, skill: 'normal' }, promiseRand(PARTNER));
+  promises[PARTNER] = choosePromise(hands[PARTNER], { traits: partnerTraits, skill: partnerSkill }, promiseRand(PARTNER));
   promises[RIGHT] = choosePromise(hands[RIGHT], opp(RIGHT), promiseRand(RIGHT));
   return {
     partnerId: opts.partnerId,
@@ -161,8 +168,10 @@ export const createGame = (opts: NewGameOptions): GameState => {
     target: opts.target ?? 500,
     difficulty,
     partnerTraits,
+    partnerSkill,
     seed,
     playedCards: [],
+    rounds: [],
     opponents,
   };
 };
@@ -239,6 +248,7 @@ export const playCard = (state: GameState, seat: number, card: Card): GameState 
   next.wonRounds[winner] += 1;
   next.lastRoundWinner = winner;
   next.lastRoundPlays = next.currentPlays;
+  next.rounds = [...state.rounds, next.currentPlays];
   next.currentPlays = [];
   next.leaderSeat = winner;
   next.turnSeat = winner;
@@ -259,8 +269,15 @@ export const playAiTurn = (state: GameState): GameState => {
   if (state.phase !== 'play' || seat === YOU) return state;
   const player: AiPlayer =
     seat === PARTNER
-      ? { traits: state.partnerTraits, skill: 'normal' }
+      ? { traits: state.partnerTraits, skill: state.partnerSkill }
       : opponentPlayer(state.difficulty, castById(state.opponents[seat === LEFT ? 0 : 1]).stats);
+  return playSeatWithAi(state, seat, player);
+};
+
+/** Let an AI player choose and play the card for `seat` (used for AI seats,
+ *  and by the balance simulation to play the human seat too). */
+export const playSeatWithAi = (state: GameState, seat: number, player: AiPlayer): GameState => {
+  if (state.phase !== 'play' || seat !== state.turnSeat) return state;
   const otherTeam = TEAM_OF[seat] === 'us' ? [LEFT, RIGHT] : [YOU, PARTNER];
   const partnerSeat = seat === PARTNER ? YOU : seat === YOU ? PARTNER : seat === LEFT ? RIGHT : LEFT;
   const cleanZero = (s: number) => isGoZero(state, s) && state.wonRounds[s] === 0;
@@ -282,6 +299,7 @@ export const playAiTurn = (state: GameState): GameState => {
     teamMadePromise: teamWon(state, team) >= teamPromise(state, team),
     roundsLeft: state.hands[seat].length,
     played: state.playedCards,
+    rounds: state.rounds,
     partnerGoingZero: cleanZero(partnerSeat),
     zeroTargets: otherTeam.filter(cleanZero),
   }, rand);
@@ -372,6 +390,7 @@ export const nextDeal = (state: GameState): GameState => {
     dealerSeat: (state.dealerSeat + 1) % 4,
     difficulty: state.difficulty,
     partnerTraits: state.partnerTraits,
+    partnerSkill: state.partnerSkill,
     seed: state.seed,
     dealNumber: state.dealNumber + 1,
     opponents: state.opponents,

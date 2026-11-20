@@ -83,9 +83,9 @@ export default function Home() {
                 onPress={() => router.push({ pathname: '/partner', params: { id: p.id } })}
                 accessibilityRole="button"
                 accessibilityLabel={p.name}
-                style={{ width: 40, alignItems: 'center' }}
+                style={{ width: 36, alignItems: 'center' }}
               >
-                <Avatar stem={p.portrait} size={40} grey={!owned} />
+                <Avatar stem={p.portrait} size={36} grey={!owned} />
                 {!owned ? (
                   <T x size={10}>
                     R{p.unlockRank}
