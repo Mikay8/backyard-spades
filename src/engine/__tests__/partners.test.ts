@@ -4,23 +4,22 @@ import {
   RANK_ADVANTAGES,
   STARTER_COINS,
   rankForXp,
-  statTotal,
   xpForRank,
   xpToNextRank,
 } from '../../constants/partners';
 
-describe('partner stat totals', () => {
-  it('every partner totals exactly 18 across the same 6 stats', () => {
+describe('partners', () => {
+  it('every stat is 1 to 5 dots', () => {
     for (const p of PARTNERS) {
-      expect(statTotal(p)).toBe(18);
       for (const v of Object.values(p.stats)) {
         expect(v).toBeGreaterThanOrEqual(1);
         expect(v).toBeLessThanOrEqual(5);
       }
     }
   });
-  it('there are exactly 8 family partners', () => {
-    expect(PARTNERS).toHaveLength(8);
+  it('there are 9 family partners, Grandpa included', () => {
+    expect(PARTNERS).toHaveLength(9);
+    expect(PARTNERS.map((p) => p.id)).toContain('bill');
   });
   it('starters are free, the rest are locked by rank + Coins', () => {
     expect(PARTNERS.filter((p) => p.unlockRank === 0).map((p) => p.id).sort()).toEqual(['dre', 'grandma']);
@@ -30,10 +29,17 @@ describe('partner stat totals', () => {
     expect(PARTNERS.find((p) => p.id === 'mom')).toMatchObject({ unlockRank: 10, price: 120 });
     expect(PARTNERS.find((p) => p.id === 'dad')).toMatchObject({ unlockRank: 12, price: 120 });
     expect(PARTNERS.find((p) => p.id === 'mae')).toMatchObject({ unlockRank: 15, price: 120 });
+    expect(PARTNERS.find((p) => p.id === 'bill')).toMatchObject({ unlockRank: 15, price: 200 });
   });
-  it('no partner is a difficulty tier in disguise: all totals equal', () => {
-    const totals = new Set(PARTNERS.map(statTotal));
-    expect(totals.size).toBe(1);
+  it('you get what you pay for: skill never drops as the price rises, and the priciest plays best', () => {
+    const order = ['easy', 'normal', 'hard', 'expert'];
+    const byPrice = [...PARTNERS].sort((a, b) => a.price - b.price);
+    const free = PARTNERS.filter((p) => p.price === 0);
+    const top = byPrice[byPrice.length - 1];
+    expect(free.every((p) => p.skill === 'normal')).toBe(true);
+    expect(PARTNERS.filter((p) => p.price >= 120).every((p) => order.indexOf(p.skill) >= order.indexOf('hard'))).toBe(true);
+    expect(top.id).toBe('bill');
+    expect(top.skill).toBe('expert');
   });
 });
 

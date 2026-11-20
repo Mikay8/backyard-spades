@@ -1,3 +1,4 @@
+import { type Difficulty } from './difficulty';
 // Partners, rank, Coins — brief §§9–10 (exact). Every partner totals 18.
 export type StatKey =
   | 'bidsBig'
@@ -43,12 +44,14 @@ export interface PartnerDef {
   portrait: string;
   /** Quirk icon file stem (i- prefix). */
   icon: string;
+  /** How well they play the cards. Pricier partners play better. */
+  skill: Difficulty;
 }
 
 export const PARTNERS: PartnerDef[] = [
   {
     id: 'grandma',
-    name: 'Grandma Rose',
+    name: 'Grandma',
     role: 'The Steady One',
     quirk: 'Forgot her glasses again.',
     goodWith: 'Good with you if you promise big yourself — she never steals your win.',
@@ -57,6 +60,7 @@ export const PARTNERS: PartnerDef[] = [
     unlockRank: 0,
     price: 0,
     portrait: 'grandma',
+    skill: 'normal',
     icon: 'i-glasses',
   },
   {
@@ -66,10 +70,11 @@ export const PARTNERS: PartnerDef[] = [
     quirk: 'Bids big and plays bold. Sometimes too bold.',
     goodWith: 'Good with you if your hand is strong — he leads strong and plays bold.',
     watchOut: 'Watch out: he promises 4 when he has 3, and sometimes takes a round you had covered.',
-    stats: { bidsBig: 5, savesSpades: 3, wontSteal: 2, avoidsExtras: 2, lovesZero: 2, leadsStrong: 4 },
+    stats: { bidsBig: 4, savesSpades: 3, wontSteal: 2, avoidsExtras: 2, lovesZero: 2, leadsStrong: 4 },
     unlockRank: 0,
     price: 0,
     portrait: 'p-dre',
+    skill: 'normal',
     icon: 'i-stache',
   },
   {
@@ -83,6 +88,7 @@ export const PARTNERS: PartnerDef[] = [
     unlockRank: 3,
     price: 25,
     portrait: 'p-marcus',
+    skill: 'hard',
     icon: 'i-notebook',
   },
   {
@@ -92,10 +98,11 @@ export const PARTNERS: PartnerDef[] = [
     quirk: 'Slams his spades down fast.',
     goodWith: 'Good with you if you want spades out early and the table opened up.',
     watchOut: 'Watch out: he burns spades you might have needed later.',
-    stats: { bidsBig: 4, savesSpades: 1, wontSteal: 2, avoidsExtras: 3, lovesZero: 3, leadsStrong: 5 },
+    stats: { bidsBig: 3, savesSpades: 1, wontSteal: 2, avoidsExtras: 3, lovesZero: 3, leadsStrong: 5 },
     unlockRank: 5,
     price: 60,
     portrait: 'p-theo',
+    skill: 'normal',
     icon: 'i-tongs',
   },
   {
@@ -105,10 +112,11 @@ export const PARTNERS: PartnerDef[] = [
     quirk: "'I got nothing' — and she means it.",
     goodWith: 'Good with you if you like huge swing games — she will go zero when she can.',
     watchOut: 'Watch out: terrible if you just want a safe win.',
-    stats: { bidsBig: 3, savesSpades: 4, wontSteal: 2, avoidsExtras: 1, lovesZero: 5, leadsStrong: 3 },
+    stats: { bidsBig: 3, savesSpades: 5, wontSteal: 2, avoidsExtras: 2, lovesZero: 5, leadsStrong: 2 },
     unlockRank: 8,
     price: 60,
     portrait: 'p-june',
+    skill: 'normal',
     icon: 'i-sunhat',
   },
   {
@@ -118,10 +126,11 @@ export const PARTNERS: PartnerDef[] = [
     quirk: 'Never steals your win — and leads strong.',
     goodWith: 'Good with you if you promise big and want cover plus pressure.',
     watchOut: 'Watch out: her strong leads can cost you extras.',
-    stats: { bidsBig: 3, savesSpades: 3, wontSteal: 5, avoidsExtras: 2, lovesZero: 1, leadsStrong: 4 },
+    stats: { bidsBig: 3, savesSpades: 2, wontSteal: 5, avoidsExtras: 3, lovesZero: 3, leadsStrong: 4 },
     unlockRank: 10,
     price: 120,
     portrait: 'p-mom',
+    skill: 'hard',
     icon: 'i-lemonade',
   },
   {
@@ -131,10 +140,11 @@ export const PARTNERS: PartnerDef[] = [
     quirk: 'Wins by a little, never by too much.',
     goodWith: 'Good with you when the game is tight and extras would cost you.',
     watchOut: 'Watch out: big wins are rare with him.',
-    stats: { bidsBig: 2, savesSpades: 3, wontSteal: 4, avoidsExtras: 5, lovesZero: 2, leadsStrong: 2 },
+    stats: { bidsBig: 3, savesSpades: 3, wontSteal: 4, avoidsExtras: 5, lovesZero: 4, leadsStrong: 2 },
     unlockRank: 12,
     price: 120,
     portrait: 'p-dad',
+    skill: 'hard',
     icon: 'i-clover',
   },
   {
@@ -144,14 +154,28 @@ export const PARTNERS: PartnerDef[] = [
     quirk: 'Huge wins or big misses, never in the middle.',
     goodWith: 'Good with you if you like high-risk games.',
     watchOut: 'Watch out: the most volatile partner — a bad hand with Mae is a big loss.',
-    stats: { bidsBig: 5, savesSpades: 3, wontSteal: 2, avoidsExtras: 1, lovesZero: 4, leadsStrong: 3 },
+    stats: { bidsBig: 4, savesSpades: 3, wontSteal: 3, avoidsExtras: 2, lovesZero: 5, leadsStrong: 2 },
     unlockRank: 15,
     price: 120,
     portrait: 'p-mae',
+    skill: 'hard',
     icon: 'i-chicken',
   },
+  {
+    id: 'bill',
+    name: 'Grandpa',
+    role: 'The Old Pro',
+    quirk: '“Was that hearts?” He mumbles — then plays the perfect card.',
+    goodWith: 'Good with you if you want the best partner at the table — he reads the whole game.',
+    watchOut: 'Watch out: he costs the most, and loves going zero.',
+    stats: { bidsBig: 3, savesSpades: 1, wontSteal: 4, avoidsExtras: 4, lovesZero: 5, leadsStrong: 5 },
+    unlockRank: 15,
+    price: 200,
+    portrait: 'bill',
+    skill: 'expert',
+    icon: 'i-clover',
+  },
 ];
-
 export const partnerById = (id: string): PartnerDef =>
   PARTNERS.find((p) => p.id === id) ?? PARTNERS[0];
 
@@ -188,7 +212,7 @@ export const RANK_ADVANTAGES: RankAdvantage[] = [
   { rank: 8, label: 'Auntie June is ready to buy (60 Coins)' },
   { rank: 10, label: 'Mom is ready to buy (120 Coins) + Favourite partner + partner review' },
   { rank: 12, label: 'Dad is ready to buy (120 Coins)' },
-  { rank: 15, label: 'Little Sister Mae is ready to buy (120 Coins) + Table themes' },
+  { rank: 15, label: 'Little Sister Mae (120 Coins) and Grandpa (200 Coins) are ready to buy + Table themes' },
 ];
 
 export const nextUnlockAfter = (rank: number): PartnerDef | null =>
@@ -204,6 +228,7 @@ export const PARTNER_ACCENT: Record<string, string> = {
   mom: '#2c9c8f',
   dad: '#3b6fd0',
   mae: '#e0568a',
+  bill: '#c9922e',
 };
 
 /** Plain-language line for each stat value 1..5 (partner detail screen). */

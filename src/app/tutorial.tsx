@@ -1,5 +1,5 @@
 // Interactive Tutorial — brief §13, Steps 1–10. A guided practice game with
-// the FIXED example deal. Grandma Rose is the teacher. Practice only — no
+// the FIXED example deal. Grandma is the teacher. Practice only — no
 // Coins or XP are saved.
 //
 // Script corrections vs the brief's first draft (all are rule errors in the
@@ -42,7 +42,7 @@ export default function Tutorial() {
   const target = targetFor(settings);
   const [step, setStep] = useState(1);
   const [coach, setCoach] = useState(
-    'This is Spades with a partner. You and Grandma Rose are one team. The other side is the other team.',
+    'This is Spades with a partner. You and Grandma are one team. The other side is the other team.',
   );
   const [plays, setPlays] = useState<Play[]>([]);
   const [won, setWon] = useState({ us: 0, them: 0 });
@@ -337,7 +337,7 @@ export default function Tutorial() {
   const scoreThem = step === 10 && dealResult ? dealResult.themPoints : 0;
   const roundsPlayed = won.us + won.them;
   const PILL_POS = [
-    { label: 'Grandma Rose — your partner', left: 96, top: 4, open: false },
+    { label: 'Grandma — your partner', left: 120, top: 4, open: false },
     { label: `First to ${target} wins`, left: 125, top: 100, open: true },
     { label: 'Left — other side', left: 10, top: 150, open: false },
     { label: 'Right — other side', left: 236, top: 150, open: false },
@@ -348,7 +348,7 @@ export default function Tutorial() {
     <Screen contentStyle={{ paddingHorizontal: 0, paddingBottom: 0, flexGrow: 1 }}>
       <TopBar us={scoreUs} them={scoreThem} deal={1} target={target} onClose={() => router.replace('/')} />
       <PartnerRow
-        name="Grandma Rose"
+        name="Grandma"
         stem="grandma"
         mood={lastWinner === PARTNER || lastWinner === YOU ? 'happy' : 'neutral'}
         compact={short}

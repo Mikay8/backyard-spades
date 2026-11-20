@@ -16,7 +16,7 @@ export interface ItemDef {
 }
 
 export const ITEMS: ItemDef[] = [
-  { id: 'glasses', name: 'Rose’s Glasses', price: 20, boost: ['bidsBig', 'leadsStrong'], note: '' },
+  { id: 'glasses', name: 'Grandma’s Glasses', price: 20, boost: ['bidsBig', 'leadsStrong'], note: '' },
   { id: 'lemonade', name: 'Cold Lemonade', price: 30, boost: ['lovesZero', 'savesSpades'], note: '' },
   { id: 'notebook', name: 'Score Notebook', price: 30, boost: ['bidsBig', 'avoidsExtras'], note: '' },
   { id: 'tongs', name: 'BBQ Tongs', price: 40, boost: ['savesSpades', 'wontSteal'], note: '' },
@@ -52,5 +52,5 @@ export const partnerFirstName = (id: string): string => {
   const p = PARTNERS.find((x) => x.id === id);
   if (!p) return '';
   const parts = p.name.split(' ');
-  return parts[parts.length - 1] === 'Rose' ? 'Grandma' : parts[parts.length - 1];
+  return parts[parts.length - 1];
 };

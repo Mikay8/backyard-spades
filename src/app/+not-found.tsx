@@ -67,7 +67,7 @@ export default function NotFound() {
         404
       </T>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 4 }}>
-        <Frame stem="grandma" mood="wince" size={72} label="Grandma Rose, puzzled" />
+        <Frame stem="grandma" mood="wince" size={72} label="Grandma, puzzled" />
         <View
           style={{
             flex: 1,
