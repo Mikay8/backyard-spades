@@ -12,6 +12,7 @@ import { Bar, BtnP, BtnS, MiniCard, Pill, Pix, Screen, Sheet, T } from '../compo
 import { IMAGES } from '../assets/images';
 import { partnerById } from '../constants/partners';
 import { partnerFirstName } from '../constants/items';
+import { castById } from '../constants/cast';
 import { useApp } from '../state/store';
 import { LEFT, PARTNER, RIGHT, YOU, legalForTurn, nextDeal, playAiTurn, playCard, setPlayerPromise } from '../engine/game';
 import { SUIT_NAME, sortHand, type Card } from '../engine/cards';
@@ -39,7 +40,13 @@ export default function Game() {
     if (key && key !== lastRoundRef.current) {
       lastRoundRef.current = key;
       const w = game.lastRoundWinner;
-      setBanner(w === YOU ? 'You took the round.' : w === PARTNER ? `${partnerFirstName(game.partnerId)} takes it.` : 'They took the round.');
+      setBanner(
+        w === YOU
+          ? 'You took the round.'
+          : w === PARTNER
+            ? `${partnerFirstName(game.partnerId)} takes it.`
+            : `${castById(game.opponents[w === LEFT ? 0 : 1]).short} took the round.`,
+      );
       const t = setTimeout(() => setBanner(null), settings.reducedMotion ? 600 : 750);
       return () => clearTimeout(t);
     }
@@ -103,7 +110,12 @@ export default function Game() {
     setGame(playCard(game, YOU, card));
   };
 
-  const seatName = (s: number) => (s === YOU ? 'You' : s === LEFT ? 'Left' : s === PARTNER ? first : 'Right');
+  const leftCast = castById(game.opponents[0]);
+  const rightCast = castById(game.opponents[1]);
+  const seatName = (s: number) => (s === YOU ? 'You' : s === LEFT ? leftCast.short : s === PARTNER ? first : rightCast.short);
+  // Opponents smile when their side takes the round or makes its promise.
+  const oppMood = (s: number): 'happy' | 'neutral' | 'wince' =>
+    dealDone && d ? (d.themWon >= d.themPromise ? 'happy' : 'wince') : winnerSeat === s || winnerSeat === (s === LEFT ? RIGHT : LEFT) ? 'happy' : 'neutral';
   let status = '';
   if (game.phase === 'promise') status = 'Make your promise';
   else if (banner) status = banner;
@@ -226,7 +238,7 @@ export default function Game() {
             {[LEFT, PARTNER, RIGHT].map((s) => (
               <View key={s}>
                 <T x size={12} style={{ marginBottom: 3 }}>
-                  {s === PARTNER ? partner.name : seatName(s)}
+                  {s === PARTNER ? partner.name : (s === LEFT ? leftCast : rightCast).name}
                 </T>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 3 }}>
                   {sortHand(game.hands[s]).map((c) => (
@@ -261,8 +273,8 @@ export default function Game() {
               partnerName={first}
               seePartnerPromise={game.seePartnerPromise}
               opponentPromises={[
-                { name: 'Left', promise: game.promises[LEFT] ?? 0 },
-                { name: 'Right', promise: game.promises[RIGHT] ?? 0 },
+                { name: leftCast.short, promise: game.promises[LEFT] ?? 0 },
+                { name: rightCast.short, promise: game.promises[RIGHT] ?? 0 },
               ]}
               onConfirm={(n) => setGame(setPlayerPromise(game, n))}
             />
@@ -277,6 +289,8 @@ export default function Game() {
             plays={plays}
             winnerSeat={winnerSeat}
             maxH={short ? 190 : undefined}
+            leftWho={{ label: leftCast.short, name: leftCast.name, stem: leftCast.portrait, mood: oppMood(LEFT) }}
+            rightWho={{ label: rightCast.short, name: rightCast.name, stem: rightCast.portrait, mood: oppMood(RIGHT) }}
           />
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, alignItems: 'center', paddingVertical: 4, flexWrap: 'wrap' }}>
             {profile.gamesPlayed < 3 ? <Pill label="Spades beat everything" /> : null}

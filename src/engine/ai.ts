@@ -1,13 +1,67 @@
-// Partner AI — brief §9. Quirks are DETERMINISTIC rules, not luck rolls.
-// No randomness anywhere in this file: same hand + same table = same play.
-import { cardBeats, estimateWinners, legalCards, roundWinner, type Card, type Play } from './cards';
-import { partnerById } from '../constants/partners';
+// Card-playing AI.
+//
+// Two layers:
+//  1. Personality — the six stat dots (1–5) decide each choice as a chance.
+//     A partner plays from their own dots (plus any item boost); opponents
+//     play from balanced dots. Same dots, same tendencies, every game.
+//  2. Skill — how well the seat plays the cards (Easy / Normal / Hard /
+//     Expert). Opponents use the difficulty level; family partners play at
+//     Normal so a partner always feels like themselves.
+//
+// Randomness comes only from the `rand` function passed in. The game seeds it
+// per game so a game is reproducible; when omitted, rand is a constant 0.5,
+// so every chance resolves the "median" way (p > 0.5 → yes) — fully
+// deterministic, used by the tutorial and tests.
+import { cardBeats, legalCards, newDeck, roundWinner, type Card, type Play, type Suit } from './cards';
+import { PARTNERS, type Stats } from '../constants/partners';
+import { type Difficulty } from '../constants/difficulty';
 
-export type PartnerId = string;
+export type Skill = Difficulty;
+export type Rand = () => number;
+
+export interface AiPlayer {
+  traits: Stats;
+  skill: Skill;
+}
+
+/** Opponents' personality: middle-of-the-road, never undercut their partner. */
+export const BALANCED: Stats = { bidsBig: 3, savesSpades: 3, wontSteal: 5, avoidsExtras: 3, lovesZero: 2, leadsStrong: 3 };
+/** Easy opponents also trip over their own partner now and then. */
+const BALANCED_EASY: Stats = { ...BALANCED, wontSteal: 3 };
+
+/** An opponent: their own dots if they have a personality, else balanced; skill from the difficulty. */
+export const opponentPlayer = (skill: Skill, traits?: Stats | null): AiPlayer => ({
+  traits: traits ?? (skill === 'easy' ? BALANCED_EASY : BALANCED),
+  skill,
+});
+
+/** Accepts an AiPlayer or a legacy id ('balanced' or a partner id). */
+const resolve = (who: AiPlayer | string): AiPlayer => {
+  if (typeof who !== 'string') return who;
+  const p = PARTNERS.find((x) => x.id === who);
+  return { traits: p ? p.stats : BALANCED, skill: 'normal' };
+};
+
+const MEDIAN: Rand = () => 0.5;
+const chance = (p: number, rand: Rand) => rand() < p;
+/** 1..5 dot value → 0..1. */
+const u = (dots: number) => (Math.max(1, Math.min(5, dots)) - 1) / 4;
+
+/** Small seeded PRNG (mulberry32). */
+export const makeRand = (seed: number): Rand => {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
 
 export interface AiContext {
   hand: Card[];
-  ledSuit: 'S' | 'H' | 'D' | 'C' | null;
+  ledSuit: Suit | null;
   plays: Play[];
   spadesBroken: boolean;
   mySeat: number;
@@ -17,13 +71,19 @@ export interface AiContext {
   goingZero: boolean;
   /** Team has already won at least its promise this deal. */
   teamMadePromise: boolean;
-  /** Rounds left in this deal after this card (for ducking decisions). */
+  /** Rounds left in this deal including this one. */
   roundsLeft: number;
+  /** Every card played earlier this deal (not counting `plays`). For card counting. */
+  played?: Card[];
+  /** My partner promised zero and hasn't won a round yet. */
+  partnerGoingZero?: boolean;
+  /** Seats on the other team still on track for a go-zero (Expert hunts them). */
+  zeroTargets?: number[];
 }
 
 export interface AiChoice {
   card: Card;
-  /** True when the card played is the lowest card in the hand (Grandma's quirk). */
+  /** True when the card played is the lowest card in the hand. */
   ledLow: boolean;
   /** True when the card takes a round the partner already had covered. */
   stole: boolean;
@@ -31,174 +91,173 @@ export interface AiChoice {
 
 const lowest = (cards: Card[]): Card => [...cards].sort((a, b) => a.rank - b.rank)[0];
 const highest = (cards: Card[]): Card => [...cards].sort((a, b) => b.rank - a.rank)[0];
+const same = (a: Card, b: Card) => a.suit === b.suit && a.rank === b.rank;
 
-/** Cards in `legal` that would win the round as it stands. */
-const winningCards = (legal: Card[], plays: Play[], ledSuit: 'S' | 'H' | 'D' | 'C'): Card[] => {
-  if (plays.length === 0) return legal;
-  const current = plays[roundWinnerIndex(plays)];
-  return legal.filter((c) => cardBeats(c, current.card, ledSuit));
-};
-
-const roundWinnerIndex = (plays: Play[]): number => {
-  const ledSuit = plays[0].card.suit;
+const winnerIndex = (plays: Play[]): number => {
+  const led = plays[0].card.suit;
   let best = 0;
-  for (let i = 1; i < plays.length; i++) {
-    if (cardBeats(plays[i].card, plays[best].card, ledSuit)) best = i;
-  }
+  for (let i = 1; i < plays.length; i++) if (cardBeats(plays[i].card, plays[best].card, led)) best = i;
   return best;
 };
-
-/** Cards in `legal` that would NOT win the round as it stands. */
-const losingCards = (legal: Card[], plays: Play[], ledSuit: 'S' | 'H' | 'D' | 'C'): Card[] => {
+const winningCards = (legal: Card[], plays: Play[]): Card[] => {
   if (plays.length === 0) return legal;
-  return legal.filter((c) => !winningCards([c], plays, ledSuit).includes(c));
+  const led = plays[0].card.suit;
+  const cur = plays[winnerIndex(plays)].card;
+  return legal.filter((c) => cardBeats(c, cur, led));
+};
+const losingCards = (legal: Card[], plays: Play[]): Card[] => {
+  const wins = winningCards(legal, plays);
+  return legal.filter((c) => !wins.some((w) => same(w, c)));
 };
 
-/**
- * Promise for an AI seat. Estimate first, then the partner's deterministic
- * adjustment. Balanced opponents (id 'balanced') promise the estimate.
- * Returns 0 for a go-zero promise.
- */
-export const choosePromise = (hand: Card[], partnerId: PartnerId): number => {
-  const est = estimateWinners(hand);
-  const clamp = (n: number) => Math.max(0, Math.min(13, n));
-  switch (partnerId) {
-    case 'grandma':
-      return clamp(est - 1); // promises low
-    case 'dre':
-      return clamp(est + 1); // always promises 1 more than he has
-    case 'marcus':
-      return clamp(est); // promises accurately
-    case 'theo':
-      return clamp(est + 1); // promises high
-    case 'june':
-      return est <= 2 ? 0 : clamp(est); // if she can go zero, she will
-    case 'mom':
-      return clamp(est);
-    case 'dad':
-      return clamp(est - 1); // promises low
-    case 'mae':
-      return est <= 2 ? 0 : clamp(est + 1); // promises high, loves going zero
-    default:
-      return clamp(est); // balanced opponents
+/** Cards still unseen by this seat (not in my hand, not played). */
+const unseen = (hand: Card[], played: Card[]): Card[] =>
+  newDeck().filter((c) => !hand.some((h) => same(h, c)) && !played.some((p) => same(p, c)));
+
+/** A "boss" card is the highest card left in its suit — it wins if followed. */
+const isBoss = (card: Card, hand: Card[], played: Card[]): boolean =>
+  !unseen(hand, played).some((c) => c.suit === card.suit && c.rank > card.rank);
+
+// ───────────────────────────── Promise
+
+/** Likely winners. Normal: aces + high spades (+1 for 5+ spades). Hard+: also guarded kings and long spades. */
+export const estimateFor = (hand: Card[], skill: Skill): number => {
+  let n = 0;
+  const bySuit = (s: Suit) => hand.filter((c) => c.suit === s);
+  for (const c of hand) {
+    if (c.rank === 14) n += 1;
+    else if (c.suit === 'S' && c.rank >= 12) n += 1;
   }
+  const spades = bySuit('S').length;
+  if (spades >= 5) n += 1;
+  if (skill === 'hard' || skill === 'expert') {
+    for (const s of ['H', 'D', 'C'] as Suit[]) {
+      const cards = bySuit(s);
+      if (cards.some((c) => c.rank === 13) && cards.length >= 2 && cards.length <= 5) n += 0.5;
+    }
+    if (spades >= 7) n += 1;
+  }
+  return Math.min(13, Math.round(n));
 };
 
-/** Lead card for an AI seat, by quirk. */
-const chooseLead = (hand: Card[], partnerId: PartnerId, spadesBroken: boolean): Card => {
-  const legal = legalCards(hand, null, spadesBroken);
+/** Promise for an AI seat. 0 = go zero. */
+export const choosePromise = (hand: Card[], who: AiPlayer | string, rand: Rand = MEDIAN): number => {
+  const { traits, skill } = resolve(who);
+  const est = estimateFor(hand, skill);
+  const clamp = (n: number) => Math.max(1, Math.min(13, n));
+
+  // Loves Going Zero: the more dots, the stronger a hand they'll go zero on.
+  const zeroMax = [-1, 0, 1, 2, 2][traits.lovesZero - 1];
+  const zeroChance = [0, 0.35, 0.5, 0.75, 1][traits.lovesZero - 1];
+  const spades = hand.filter((c) => c.suit === 'S');
+  const safeForZero = !spades.some((c) => c.rank >= 13) && spades.length <= 3;
+  if (est <= zeroMax && safeForZero && chance(zeroChance, rand)) return 0;
+
+  // Bids Big: 1 dot → promise 1 under, 3 → exact, 5 → 1 over. Half-steps by chance.
+  const offset = (traits.bidsBig - 3) / 2;
+  let promise = est + Math.trunc(offset);
+  const frac = Math.abs(offset % 1);
+  if (frac > 0 && chance(frac, rand)) promise += Math.sign(offset);
+
+  // Easy seats misjudge their hand.
+  if (skill === 'easy' && chance(0.5, rand)) promise += chance(0.5, rand) ? 1 : -1;
+  return clamp(promise);
+};
+
+// ───────────────────────────── Play
+
+const chooseLead = (p: AiPlayer, ctx: AiContext, legal: Card[], rand: Rand): Card => {
+  const { traits, skill } = p;
+  const played = ctx.played ?? [];
+  const smart = skill === 'hard' || skill === 'expert';
+  const spades = legal.filter((c) => c.suit === 'S');
   const nonSpades = legal.filter((c) => c.suit !== 'S');
-  switch (partnerId) {
-    case 'grandma':
-      return lowest(legal); // leads her lowest card every time
-    case 'theo': {
-      // Leads spades at the first legal chance.
-      const spades = legal.filter((c) => c.suit === 'S');
-      if (spades.length > 0) return highest(spades);
-      return highest(legal);
-    }
-    case 'dre':
-      return highest(legal); // leads strong
-    case 'mom':
-      return highest(nonSpades.length > 0 ? nonSpades : legal); // leads strong
-    case 'mae':
-      return highest(legal); // plays wild
-    case 'marcus':
-      return lowest(nonSpades.length > 0 ? nonSpades : legal); // safe, steady
-    case 'dad':
-      return lowest(legal); // ducks, wins by a little
-    case 'june':
-      return lowest(legal);
-    default:
-      return lowest(nonSpades.length > 0 ? nonSpades : legal);
+  const side = nonSpades.length > 0 ? nonSpades : legal;
+
+  // Expert: an opponent is going zero — lead low to make them take a round.
+  if (skill === 'expert' && (ctx.zeroTargets?.length ?? 0) > 0) return lowest(side);
+  // Team already made its promise and this seat avoids extras: lead low.
+  if (ctx.teamMadePromise && chance(u(traits.avoidsExtras), rand)) return lowest(legal);
+
+  // Low Saves Spades → leads spades as soon as they're allowed.
+  if (spades.length > 0 && chance(1 - u(traits.savesSpades), rand)) return highest(spades);
+
+  // Hard+: cash a sure winner first.
+  if (smart) {
+    const bosses = side.filter((c) => isBoss(c, ctx.hand, played));
+    if (bosses.length > 0 && chance(0.5 + u(traits.leadsStrong) / 2, rand)) return highest(bosses);
   }
+  // Leads Strong → high card, otherwise low.
+  if (chance(u(traits.leadsStrong), rand)) return highest(side);
+  if (smart) {
+    // Lead low from the longest side suit (keeps short suits for trumping later).
+    const bySuit = (s: Suit) => side.filter((c) => c.suit === s);
+    const longest = (['H', 'D', 'C', 'S'] as Suit[]).map(bySuit).sort((a, b) => b.length - a.length)[0];
+    if (longest.length > 0) return lowest(longest);
+  }
+  return lowest(side);
 };
 
-/**
- * Follow / respond to a led suit, by quirk.
- * `partnerWinning` = the partner already has this round covered.
- */
-const chooseFollow = (
-  hand: Card[],
-  partnerId: PartnerId,
-  ctx: AiContext,
-  legal: Card[],
-): Card => {
-  const ledSuit = ctx.ledSuit as 'S' | 'H' | 'D' | 'C';
-  const partnerWinning = ctx.currentWinnerSeat === ctx.partnerSeat;
-  const wins = winningCards(legal, ctx.plays, ledSuit);
-  const loses = losingCards(legal, ctx.plays, ledSuit);
-  const lowestLose = loses.length > 0 ? lowest(loses) : lowest(legal);
+const chooseFollow = (p: AiPlayer, ctx: AiContext, legal: Card[], rand: Rand): Card => {
+  const { traits, skill } = p;
+  const played = ctx.played ?? [];
+  const smart = skill === 'hard' || skill === 'expert';
+  const ledSuit = ctx.ledSuit as Suit;
+  const wins = winningCards(legal, ctx.plays);
+  const loses = losingCards(legal, ctx.plays);
   const lowestWin = wins.length > 0 ? lowest(wins) : null;
+  // Easy seats throw away their biggest losing card; better seats keep it.
+  const discard = loses.length > 0 ? (skill === 'easy' ? highest(loses) : lowest(loses)) : lowest(legal);
+  const partnerWinning = ctx.currentWinnerSeat === ctx.partnerSeat;
+  const last = ctx.plays.length === 3;
+  const hasLed = ctx.hand.some((c) => c.suit === ledSuit);
 
-  // Going zero: always try to lose. Lead low already handled; here play the
-  // highest card that still loses, else the lowest card overall.
-  if (ctx.goingZero) {
-    if (loses.length > 0) return highest(loses);
-    return lowest(legal);
+  // Going zero: highest card that still loses, else the lowest card.
+  if (ctx.goingZero) return loses.length > 0 ? highest(loses) : lowest(legal);
+
+  // Hard+: partner went zero and is winning this round — take it off them.
+  if (smart && ctx.partnerGoingZero && partnerWinning && lowestWin) return lowestWin;
+
+  // Expert: a go-zero opponent is winning this round — leave it with them.
+  if (skill === 'expert' && ctx.currentWinnerSeat !== null && ctx.zeroTargets?.includes(ctx.currentWinnerSeat)) {
+    return loses.length > 0 ? highest(loses) : lowest(legal);
   }
 
-  // Dad ducks once the team promise is already made — extras cost him.
-  if (partnerId === 'dad' && ctx.teamMadePromise) return lowestLose;
+  // Avoids Extras: team promise made → duck.
+  if (ctx.teamMadePromise && chance(u(traits.avoidsExtras), rand)) return discard;
 
-  // Marcus never plays a spade until he has to: when void in the led suit he
-  // discards his lowest non-spade instead of winning with a spade.
-  if (partnerId === 'marcus') {
-    const hasLedSuit = hand.some((c) => c.suit === ledSuit);
-    if (!hasLedSuit) {
-      const nonSpades = legal.filter((c) => c.suit !== 'S');
-      if (nonSpades.length > 0) return lowest(nonSpades);
-    }
-    if (partnerWinning) return lowestLose;
-    return lowestWin ?? lowest(legal);
+  // Won't Steal Your Win: partner has it covered → usually play low.
+  if (partnerWinning) {
+    if (lowestWin && chance(1 - u(traits.wontSteal), rand)) return lowestWin;
+    return discard;
   }
 
-  // Theo always wins with a spade when he is void, even if the partner had
-  // the round covered — that is how he steals your win.
-  if (partnerId === 'theo') {
-    const hasLedSuit = hand.some((c) => c.suit === ledSuit);
-    if (!hasLedSuit) {
-      const spades = legal.filter((c) => c.suit === 'S');
-      if (spades.length > 0 && lowestWin) return lowestWin;
-      const nonSpades = legal.filter((c) => c.suit !== 'S');
-      if (nonSpades.length > 0) return lowest(nonSpades);
-    }
-    if (partnerWinning) return lowestLose;
-    return lowestWin ?? lowest(legal);
+  if (!lowestWin) return discard;
+
+  // Out of the led suit: winning means trumping. Saves Spades → often holds them back.
+  if (!hasLed && lowestWin.suit === 'S' && ledSuit !== 'S') {
+    const trump = chance(1 - 0.8 * u(traits.savesSpades), rand) || (smart && last);
+    return trump ? lowestWin : discard;
   }
 
-  // Grandma and Mom never steal your win: if the partner has the round
-  // covered, play the lowest card that does not win it.
-  if (partnerId === 'grandma' || partnerId === 'mom') {
-    if (partnerWinning) return lowestLose;
-    return lowestWin ?? lowest(legal);
-  }
+  // Hard+: second to play, can't win for sure → keep the big card for later.
+  if (smart && ctx.plays.length === 1 && !isBoss(lowestWin, ctx.hand, played) && loses.length > 0) return lowest(loses);
 
-  // Dre and Mae sometimes steal: if the partner has the round covered and
-  // they hold a card that beats the partner's, they play the lowest such card.
-  if (partnerId === 'dre' || partnerId === 'mae') {
-    if (partnerWinning && lowestWin) return lowestWin;
-    if (partnerWinning) return lowestLose;
-    return lowestWin ?? lowest(legal);
-  }
-
-  // Dad (not yet made promise) and June and balanced opponents:
-  // don't steal when the partner has it covered; otherwise win cheaply.
-  if (partnerWinning) return lowestLose;
-  return lowestWin ?? lowest(legal);
+  return lowestWin;
 };
 
-export const chooseCard = (partnerId: PartnerId, ctx: AiContext): AiChoice => {
+export const chooseCard = (who: AiPlayer | string, ctx: AiContext, rand: Rand = MEDIAN): AiChoice => {
+  const p = resolve(who);
   const legal = legalCards(ctx.hand, ctx.ledSuit, ctx.spadesBroken);
+  const leading = ctx.ledSuit === null || ctx.plays.length === 0;
   let card: Card;
-  if (ctx.ledSuit === null || ctx.plays.length === 0) {
-    card = chooseLead(ctx.hand, partnerId, ctx.spadesBroken);
+  if (p.skill === 'easy' && !ctx.goingZero && chance(0.25, rand)) {
+    // Easy: a quarter of plays are a careless pick.
+    card = legal[Math.floor(rand() * legal.length) % legal.length];
+  } else if (leading) {
+    card = ctx.goingZero ? lowest(legal) : chooseLead(p, ctx, legal, rand);
   } else {
-    card = chooseFollow(ctx.hand, partnerId, ctx, legal);
-  }
-  // If going zero and leading, lead the lowest card (lose the round).
-  if (ctx.goingZero && (ctx.ledSuit === null || ctx.plays.length === 0)) {
-    card = lowest(legal);
+    card = chooseFollow(p, ctx, legal, rand);
   }
   const ledLow = ctx.hand.every((c) => c.rank >= card.rank);
   const stole =
@@ -209,6 +268,4 @@ export const chooseCard = (partnerId: PartnerId, ctx: AiContext): AiChoice => {
 };
 
 /** Human hint for the promise picker: a plain count of likely winners. */
-export const likelyWinnersHint = (hand: Card[]): number => estimateWinners(hand);
-
-export const partnerStatsFor = (id: PartnerId) => partnerById(id).stats;
+export const likelyWinnersHint = (hand: Card[]): number => estimateFor(hand, 'normal');

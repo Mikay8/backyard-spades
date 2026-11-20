@@ -19,14 +19,14 @@ import {
   LOSS_XP,
   PARTNERS,
   STARTER_COINS,
-  WIN_COINS,
   WIN_XP,
   partnerById,
   rankForXp,
   type PartnerDef,
   xpForRank,
 } from '../constants/partners';
-import { itemById } from '../constants/items';
+import { effectiveStats, itemById } from '../constants/items';
+import { difficultyDef, effectiveDifficulty, type Difficulty } from '../constants/difficulty';
 import { createGame, type DealResult, type GameState } from '../engine/game';
 
 const PROFILE_KEY = 'backyard:profile-v1';
@@ -97,6 +97,8 @@ export interface Settings {
   cardBack: 'check' | 'green' | 'navy';
   /** Quick = first to 250, Classic = first to 500. */
   gameLength: 'quick' | 'classic';
+  /** Difficulty you chose. You never play below your rank's minimum (effectiveDifficulty). */
+  difficulty: Difficulty;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -109,6 +111,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tableTheme: 'check',
   cardBack: 'check',
   gameLength: 'quick',
+  difficulty: 'easy',
 };
 
 export interface GameResult {
@@ -125,6 +128,8 @@ export interface GameResult {
   partnerReview2: string | null;
   playerWentZeroClean: boolean;
   newlyBuyable: PartnerDef[];
+  /** Difficulty the game was played at (sets the win Coins). */
+  difficulty: Difficulty;
 }
 
 /** Points needed to win a game with these settings. */
@@ -260,7 +265,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     (partnerId: string) => {
       const rank = rankForXp(profileRef.current.xp);
       setResult(null);
-      setGameState(createGame({ partnerId, seePartnerPromise: rank >= 5, target: targetFor(settingsRef.current) }));
+      const p = profileRef.current;
+      setGameState(
+        createGame({
+          partnerId,
+          seePartnerPromise: rank >= 5,
+          target: targetFor(settingsRef.current),
+          difficulty: effectiveDifficulty(settingsRef.current.difficulty, rank),
+          // The partner plays from their dots, including any equipped item's boost.
+          partnerTraits: effectiveStats(partnerById(partnerId), itemById(p.equip[partnerId])),
+        }),
+      );
     },
     [],
   );
@@ -274,7 +289,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const won = g.winner === 'us';
       const goZeroBonus = won && g.playerWentZeroClean;
       const xpEarned = (won ? WIN_XP : LOSS_XP) + (goZeroBonus ? GO_ZERO_WIN_XP_BONUS : 0);
-      const coinsEarned = (won ? WIN_COINS : LOSS_COINS) + (goZeroBonus ? GO_ZERO_WIN_COINS_BONUS : 0);
+      const winCoins = difficultyDef(g.difficulty).winCoins;
+      const coinsEarned = (won ? winCoins : LOSS_COINS) + (goZeroBonus ? GO_ZERO_WIN_COINS_BONUS : 0);
       const rankAfter = rankForXp(p.xp + xpEarned);
       const { line1, line2 } = partnerReviewLines(g);
       const unlocked: PartnerDef[] = [];
@@ -319,6 +335,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         partnerReview2: rankAfter >= 10 ? line2 : null,
         playerWentZeroClean: g.playerWentZeroClean,
         newlyBuyable: unlocked,
+        difficulty: g.difficulty,
       };
       setResult(res);
       setLastResult(res);

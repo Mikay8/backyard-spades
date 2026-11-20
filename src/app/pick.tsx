@@ -12,6 +12,7 @@ import { Avatar, BtnP, DevBadge, Header, Screen, T, Toast, usePalette } from '..
 import { COLORS } from '../constants/theme';
 import { PARTNERS, partnerById } from '../constants/partners';
 import { useApp } from '../state/store';
+import { difficultyDef, effectiveDifficulty } from '../constants/difficulty';
 
 const Arrow: React.FC<{ dir: -1 | 1; off: boolean; onPress: () => void }> = ({ dir, off, onPress }) => (
   <Pressable
@@ -39,7 +40,8 @@ const Arrow: React.FC<{ dir: -1 | 1; off: boolean; onPress: () => void }> = ({ d
 );
 
 export default function Pick() {
-  const { profile, rank, startGame, setPicked } = useApp();
+  const { profile, rank, startGame, setPicked, settings } = useApp();
+  const level = effectiveDifficulty(settings.difficulty, rank);
   const params = useLocalSearchParams<{ partner?: string }>();
   const [buyId, setBuyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -99,6 +101,9 @@ export default function Pick() {
               {picked.name} — {picked.quirk}
             </T>
           </View>
+          <T size={12} center>
+            {difficultyDef(level).name} opponents • a win pays {difficultyDef(level).winCoins} Coins
+          </T>
           <BtnP
             label="START GAME"
             onPress={() => {

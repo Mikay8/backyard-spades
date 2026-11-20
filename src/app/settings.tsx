@@ -5,8 +5,9 @@ import { goBack } from '../navigation';
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Lock } from '../components/PartnerCard';
-import { BtnS, DevBadge, Header, Screen, Sheet, T, Toggle, usePalette } from '../components/ui';
+import { BtnS, Coin, DevBadge, Header, Screen, Sheet, T, Toggle, usePalette } from '../components/ui';
 import { COLORS } from '../constants/theme';
+import { DIFFICULTIES, effectiveDifficulty, isBelow, minDifficultyForRank, difficultyDef } from '../constants/difficulty';
 import { useApp } from '../state/store';
 
 const GAME_LENGTHS = [
@@ -85,6 +86,70 @@ const Choice: React.FC<{ t: string; options: readonly { id: string; label: strin
   </View>
 );
 
+/** Difficulty: your rank sets the minimum; pick harder for bigger win Coins. */
+const DifficultyPicker: React.FC = () => {
+  const { settings, updateSettings, rank } = useApp();
+  const pal = usePalette();
+  const floor = minDifficultyForRank(rank);
+  const current = effectiveDifficulty(settings.difficulty, rank);
+  return (
+    <View style={{ paddingVertical: 8, borderTopWidth: 2, borderColor: COLORS.line, gap: 8 }}>
+      <T x size={15}>
+        Difficulty
+      </T>
+      <T size={12}>
+        How well the other side plays. Harder wins pay more Coins. Your rank sets the minimum — Rank {rank} plays at least{' '}
+        <T x size={12}>
+          {difficultyDef(floor).name}
+        </T>
+        , and it goes up as you rank up.
+      </T>
+      {DIFFICULTIES.map((d) => {
+        const locked = isBelow(d.id, floor);
+        const on = d.id === current;
+        return (
+          <Pressable
+            key={d.id}
+            onPress={() => !locked && updateSettings({ difficulty: d.id })}
+            disabled={locked}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: on, disabled: locked }}
+            accessibilityLabel={`${d.name}, win ${d.winCoins} Coins${locked ? ', below your rank' : ''}`}
+            style={{
+              borderWidth: 3,
+              borderColor: COLORS.ink,
+              borderRadius: 8,
+              backgroundColor: on ? COLORS.sun : COLORS.paper,
+              boxShadow: on ? `0 0 0 3px ${pal.tomato}` : `0 3px 0 ${COLORS.ink}`,
+              paddingVertical: 8,
+              paddingHorizontal: 10,
+              opacity: locked ? 0.5 : 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <T x size={15}>
+                {d.name}
+                {on ? ' ✓' : ''}
+              </T>
+              <T size={12}>{locked ? `Below your rank — you're past ${d.name}.` : d.blurb}</T>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Coin size={16} />
+              <T x size={13}>
+                +{d.winCoins}
+              </T>
+            </View>
+          </Pressable>
+        );
+      })}
+      <T size={12}>Coins shown are for a win. A loss pays 5 at any level.</T>
+    </View>
+  );
+};
+
 export default function Settings() {
   const { settings, updateSettings, rank, resetAll, devUnlockAll, setRank } = useApp();
   const pal = usePalette();
@@ -160,6 +225,7 @@ export default function Settings() {
       <T size={12} style={{ paddingBottom: 6 }}>
         {settings.gameLength === 'quick' ? 'Quick: first to 250 wins — about half as many deals.' : 'Classic: first to 500 wins.'} Applies to your next game.
       </T>
+      <DifficultyPicker />
 
       <H t="Sound" />
       <Toggle label="Sound" sub="Mutes all game sounds" value={settings.sound} onChange={(v) => updateSettings({ sound: v })} />

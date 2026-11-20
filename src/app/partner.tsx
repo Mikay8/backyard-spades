@@ -74,6 +74,9 @@ export default function PartnerDetail() {
           </T>
         </View>
       ) : null}
+      <T size={13} style={{ marginBottom: 6 }}>
+        These dots decide how {p.name.split(' ').pop() === 'Rose' ? 'Grandma' : p.name.split(' ').pop()} plays — more dots, more often.{item ? ' The ◆ from the item counts too.' : ''}
+      </T>
       {STAT_ORDER.map((k) => (
         <View key={k}>
           <Divider />

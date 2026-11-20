@@ -17,6 +17,7 @@ import {
   teamWon,
 } from '../game';
 import { scoreDeal } from '../scoring';
+import { CAST } from '../../constants/cast';
 
 describe('createGame', () => {
   it('deals 13 cards to each of 4 players, 52 unique cards', () => {
@@ -220,5 +221,62 @@ describe('tutorial fixed deal', () => {
     // The tutorial's coach line uses these real numbers; log them for the report.
     console.log(`tutorial fast-forward: promised 7, won ${usWon} → +${s.points} points`);
     expect(s.points).toBe(usWon >= 7 ? 70 + (usWon - 7) : -70);
+  });
+});
+
+describe('seeded AI', () => {
+  const play = (seed: number) => {
+    let g = createGame({ partnerId: 'dre', seed, difficulty: 'hard', fixedHands: TUTORIAL_HANDS });
+    g = setPlayerPromise(g, 3);
+    const moves: string[] = [];
+    for (let i = 0; i < 20 && g.phase === 'play'; i++) {
+      if (g.turnSeat === YOU) g = playCard(g, YOU, legalForTurn(g)[0]);
+      else g = playAiTurn(g);
+      moves.push(g.playedCards.map((c) => `${c.suit}${c.rank}`).join(','));
+    }
+    return { promises: g.promises.join(','), moves: moves.join('|') };
+  };
+  it('the same seed replays the same game', () => {
+    expect(play(7)).toEqual(play(7));
+  });
+  it('the game carries its difficulty and partner dots to the next deal', () => {
+    const g = createGame({ partnerId: 'dre', seed: 1, difficulty: 'expert', target: 250 });
+    const done = { ...g, phase: 'dealScore' as const };
+    const n = nextDeal(done);
+    expect(n.difficulty).toBe('expert');
+    expect(n.partnerTraits).toEqual(g.partnerTraits);
+    expect(n.seed).toBe(1);
+    expect(n.dealNumber).toBe(2);
+    expect(n.playedCards).toEqual([]);
+  });
+});
+
+describe('random opponents from the cast', () => {
+  it('two different opponents, never your partner, drawn from the whole cast', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 300; seed++) {
+      const g = createGame({ partnerId: 'dre', seed });
+      const [l, r] = g.opponents;
+      expect(l).not.toBe(r);
+      expect(g.opponents).not.toContain('dre');
+      expect(CAST.map((c) => c.id)).toEqual(expect.arrayContaining([l, r]));
+      seen.add(l).add(r);
+    }
+    expect(seen.size).toBe(CAST.length - 1); // everyone but Dre turns up
+  });
+  it('the same opponents stay for the whole game, and the same seed draws the same pair', () => {
+    const g = createGame({ partnerId: 'grandma', seed: 9 });
+    expect(nextDeal({ ...g, phase: 'dealScore' as const }).opponents).toEqual(g.opponents);
+    expect(createGame({ partnerId: 'grandma', seed: 9 }).opponents).toEqual(g.opponents);
+  });
+  it('opponents promise with their own dots: June across the table goes zero on a weak hand, Grandma never', () => {
+    const weak = ['2C', '3D', '4H', '5C', '6D', '7H', '8C', '9D', '10H', 'JC', 'QD', '2H', '3C'].map(parseCard);
+    const deal = [TUTORIAL_HANDS[0], weak, TUTORIAL_HANDS[2], TUTORIAL_HANDS[3]];
+    for (let seed = 1; seed <= 20; seed++) {
+      // June: Loves Going Zero 5 — always goes zero on this hand.
+      expect(createGame({ partnerId: 'dre', seed, opponents: ['june', 'nbrR'], fixedHands: deal }).promises[LEFT]).toBe(0);
+      // Grandma: Loves Going Zero 1 — never does.
+      expect(createGame({ partnerId: 'dre', seed, opponents: ['grandma', 'nbrR'], fixedHands: deal }).promises[LEFT]).toBeGreaterThan(0);
+    }
   });
 });
