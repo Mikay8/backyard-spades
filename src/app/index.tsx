@@ -1,6 +1,6 @@
 // Home — wordmark with the Settings gear top-right, rank + Coins (Coins
 // opens the Coin Shop), backyard scene with your partner framed at the table,
-// PLAY, tutorial, How to Play, family strip (See all → Family), last game.
+// PLAY, tutorial, How to Play, family strip (tap a face for their page), last game.
 // No accounts, no sign-in.
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -70,16 +70,9 @@ export default function Home() {
       </View>
 
       <View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-          <T x size={13}>
-            Your family
-          </T>
-          <Pressable onPress={() => router.push('/family')} accessibilityRole="link" style={{ minHeight: 36, justifyContent: 'center', paddingHorizontal: 4 }}>
-            <T x size={13} style={{ textDecorationLine: 'underline' }}>
-              See all ›
-            </T>
-          </Pressable>
-        </View>
+        <T x size={13} style={{ marginBottom: 6 }}>
+          Your family
+        </T>
         <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap' }}>
           {PARTNERS.map((p) => {
             const owned = profile.owned.includes(p.id);

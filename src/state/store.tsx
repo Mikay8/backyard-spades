@@ -168,7 +168,8 @@ interface AppContextValue {
   setGame: (g: GameState | null) => void;
   finishGame: (g: GameState) => GameResult;
   buyPartner: (partnerId: string) => boolean;
-  setFavourite: (partnerId: string) => void;
+  /** Rank 10+: mark a favourite partner (null clears it). */
+  setFavourite: (partnerId: string | null) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   markTutorialDone: () => void;
   resetAll: () => void;
@@ -366,7 +367,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const setFavourite = useCallback(
-    (partnerId: string) => {
+    (partnerId: string | null) => {
       const p = profileRef.current;
       if (rankForXp(p.xp) < 10) return;
       saveProfile({ ...p, favourite: partnerId });
