@@ -275,7 +275,21 @@ export const LinkBtn: React.FC<{ label: string; onPress: () => void }> = ({ labe
 );
 
 /** 44×44 outlined icon button with hand-drawn (View-built) glyphs. */
-export const IconBtn: React.FC<{ icon: 'back' | 'close' | 'pause'; onPress: () => void; label: string }> = ({
+/** Pixel-style cog: eight square teeth around a ring. */
+const GearGlyph: React.FC = () => (
+  <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+    {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+      <View key={a} style={{ position: 'absolute', width: 24, height: 24, alignItems: 'center', transform: [{ rotate: `${a}deg` }] }}>
+        <View style={{ width: 6, height: 6, backgroundColor: COLORS.ink }} />
+      </View>
+    ))}
+    <View style={{ width: 17, height: 17, borderRadius: 9, backgroundColor: COLORS.ink, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.paper }} />
+    </View>
+  </View>
+);
+
+export const IconBtn: React.FC<{ icon: 'back' | 'close' | 'pause' | 'gear'; onPress: () => void; label: string }> = ({
   icon,
   onPress,
   label,
@@ -295,7 +309,9 @@ export const IconBtn: React.FC<{ icon: 'back' | 'close' | 'pause'; onPress: () =
       justifyContent: 'center',
     }}
   >
-    {icon === 'back' ? (
+    {icon === 'gear' ? (
+      <GearGlyph />
+    ) : icon === 'back' ? (
       <View
         style={{
           width: 13,

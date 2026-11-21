@@ -311,7 +311,7 @@ export default function HowToPlay() {
             </View>
           ))}
         </View>
-        <T size={12}>Every 100 XP is a new rank. Coins buy partners and items — earned by playing only.</T>
+        <T size={12}>Every 100 XP is a new rank. Coins buy partners and items. You earn them by playing, or tap your Coins on Home to visit the Coin Shop.</T>
         <T x size={13}>Difficulty</T>
         <T size={12}>The other side plays better as you rank up, and harder wins pay more. You can choose a harder level in Settings, never an easier one.</T>
         <View>

@@ -59,6 +59,7 @@ export default function RootLayout() {
           <Stack.Screen name="pick" />
           <Stack.Screen name="partner" />
           <Stack.Screen name="shed" />
+          <Stack.Screen name="coins" />
           <Stack.Screen name="game" />
           <Stack.Screen name="tutorial" />
           <Stack.Screen name="howto" />

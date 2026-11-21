@@ -17,6 +17,9 @@ npm run build:web           # expo export --platform web → dist/
 
 ## What's in v1
 
+- Coin Shop (`/coins`, tap Coins on Home): four Coin packs with **mock** USD prices (`src/constants/shop.ts`). No payment is taken yet: confirming a pack just adds its Coins. Real purchases (App Store / Google Play in-app purchases, Stripe on the web) would replace the confirm step.
+- Shed items live under the partner card on Pick Your Partner (`components/ItemShelf.tsx`); `/shed` redirects there. Short of Coins → "Get Coins" opens the Coin Shop. Settings is the gear top-right on Home.
+
 - Partner balance: you get what you pay for. Each partner has a card skill (free: Normal; Marcus, Mom, Dad, Mae: Hard; Grandpa, Rank 15 / 200 Coins: Expert) and dots tuned by simulation. `npm run balance` plays seeded games for every partner and fails if a pricier tier wins less often than a cheaper one (last run, Normal opponents: free ~44%, 25 Coins ~51%, 60 ~55%, 120 ~59%, Grandpa ~63%).
 - Promises: the hand estimate is fitted to ~11,600 simulated hands (the old count of aces + high spades underestimated by ~1.6 rounds), and a good promise sits 0.5 under it. 3 Bids Big dots promise exactly that; more or fewer dots over- or under-promise, and both cost games.
 
