@@ -3,7 +3,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { goBack } from '../navigation';
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { IMAGES } from '../assets/images';
 import { ItemChips, partnerButtonLabel } from '../components/PartnerCard';
 import { BuySheet } from '../components/sheets';
@@ -14,7 +14,7 @@ import { useApp } from '../state/store';
 
 export default function PartnerDetail() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { profile, rank, setPicked } = useApp();
+  const { profile, rank, setPicked, setFavourite } = useApp();
   const [buyId, setBuyId] = useState<string | null>(null);
   const p = partnerById(id ?? 'grandma');
   const owned = profile.owned.includes(p.id);
@@ -24,6 +24,7 @@ export default function PartnerDetail() {
   const can = rank >= p.unlockRank;
   const enough = profile.coins >= p.price;
   const games = profile.gamesWithPartner[p.id] ?? { played: 0, won: 0 };
+  const fav = profile.favourite === p.id;
   const note = owned
     ? ''
     : can
@@ -112,6 +113,18 @@ export default function PartnerDetail() {
           Wins: <T x size={13}>{games.won}</T>
         </T>
       </View>
+      {owned && rank >= 10 ? (
+        <Pressable
+          onPress={() => setFavourite(fav ? null : p.id)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: fav }}
+          style={{ marginTop: 12, minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}
+        >
+          <T x size={14} style={{ textDecorationLine: 'underline' }}>
+            {fav ? '★ Favourite partner — tap to clear' : '☆ Save as favourite'}
+          </T>
+        </Pressable>
+      ) : null}
       {note ? <Note style={{ marginTop: 12 }}>{note}</Note> : null}
     </Screen>
   );

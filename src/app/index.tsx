@@ -1,12 +1,13 @@
-// Home — design canvas "Home". Wordmark, rank + Coins, backyard scene with
-// your partner framed at the table, PLAY, tutorial, links, family strip,
-// last-game card. No accounts, no sign-in.
+// Home — wordmark with the Settings gear top-right, rank + Coins (Coins
+// opens the Coin Shop), backyard scene with your partner framed at the table,
+// PLAY, tutorial, How to Play, family strip (tap a face for their page), last game.
+// No accounts, no sign-in.
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { IMAGES } from '../assets/images';
 import { RankSheet, rankLine } from '../components/sheets';
-import { Avatar, Bar, BtnP, BtnS, Coin, DevBadge, Frame, LinkBtn, Pix, Screen, T, Wordmark, coinsText } from '../components/ui';
+import { Avatar, Bar, BtnP, BtnS, Coin, DevBadge, Frame, IconBtn, LinkBtn, Pix, Screen, T, Wordmark, coinsText } from '../components/ui';
 import { COLORS } from '../constants/theme';
 import { PARTNERS, partnerById, xpIntoRank } from '../constants/partners';
 import { useApp } from '../state/store';
@@ -20,7 +21,10 @@ export default function Home() {
 
   return (
     <Screen contentStyle={{ paddingTop: 22, gap: 10 }} overlay={<RankSheet visible={showRank} onClose={() => setShowRank(false)} />}>
-      <Wordmark size={36} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Wordmark size={36} />
+        <IconBtn icon="gear" label="Settings" onPress={() => router.push('/settings')} />
+      </View>
       <DevBadge />
       {firstRun && !last ? <T size={14}>Pick a partner from the family. Promise rounds. Win the game.</T> : null}
 
@@ -37,9 +41,10 @@ export default function Home() {
           <Bar pct={xpIntoRank(profile.xp)} style={{ marginTop: 6 }} />
         </Pressable>
         <Pressable
-          onPress={() => router.push('/family')}
+          onPress={() => router.push('/coins')}
           accessibilityRole="button"
-          accessibilityLabel={`${coinsText(profile.coins)} Coins, open the family`}
+          accessibilityLabel={`${coinsText(profile.coins)} Coins, open the Coin Shop`}
+          testID="coins-button"
           style={{ width: 124, backgroundColor: COLORS.paper, borderWidth: 3, borderColor: COLORS.ink, borderRadius: 8, padding: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
         >
           <Coin />
@@ -62,12 +67,6 @@ export default function Home() {
 
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', columnGap: 4 }}>
         <LinkBtn label="How to Play" onPress={() => router.push('/howto')} />
-        <T aria-hidden>•</T>
-        <LinkBtn label="Family" onPress={() => router.push('/family')} />
-        <T aria-hidden>•</T>
-        <LinkBtn label="Shed" onPress={() => router.push('/shed')} />
-        <T aria-hidden>•</T>
-        <LinkBtn label="Settings" onPress={() => router.push('/settings')} />
       </View>
 
       <View>

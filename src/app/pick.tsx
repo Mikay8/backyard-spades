@@ -6,6 +6,7 @@ import { goBack } from '../navigation';
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollViewInstance } from 'react-native';
 import { useColumnWidth } from '../components/Scaled';
+import { ItemShelf } from '../components/ItemShelf';
 import { PartnerCard } from '../components/PartnerCard';
 import { BuySheet } from '../components/sheets';
 import { Avatar, BtnP, DevBadge, Header, Screen, T, Toast, usePalette } from '../components/ui';
@@ -189,6 +190,11 @@ export default function Pick() {
           );
         })}
       </ScrollView>
+
+      {/* Shed items for the partner on screen */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 6 }}>
+        <ItemShelf partnerId={current.id} onToast={setToast} />
+      </View>
     </Screen>
   );
 }

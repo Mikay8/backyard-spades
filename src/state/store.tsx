@@ -168,7 +168,8 @@ interface AppContextValue {
   setGame: (g: GameState | null) => void;
   finishGame: (g: GameState) => GameResult;
   buyPartner: (partnerId: string) => boolean;
-  setFavourite: (partnerId: string) => void;
+  /** Rank 10+: mark a favourite partner (null clears it). */
+  setFavourite: (partnerId: string | null) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   markTutorialDone: () => void;
   resetAll: () => void;
@@ -178,6 +179,8 @@ interface AppContextValue {
   equipItem: (itemId: string, partnerId: string) => void;
   /** Spend one Cheater's Mirror peek. */
   spendMirror: () => void;
+  /** Add Coins (Coin Shop — mock purchases for now, no payment taken). */
+  addCoins: (n: number) => void;
   /** Dev-only: jump to a rank for testing (Settings → Development).
    *  No-op in production. Sets XP to the start of that rank. */
   setRank: (rank: number) => void;
@@ -364,7 +367,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const setFavourite = useCallback(
-    (partnerId: string) => {
+    (partnerId: string | null) => {
       const p = profileRef.current;
       if (rankForXp(p.xp) < 10) return;
       saveProfile({ ...p, favourite: partnerId });
@@ -406,6 +409,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         equip[partnerId] = itemId;
       }
       saveProfile({ ...p, equip });
+    },
+    [saveProfile],
+  );
+
+  const addCoins = useCallback(
+    (n: number) => {
+      const p = profileRef.current;
+      if (n > 0) saveProfile({ ...p, coins: p.coins + n });
     },
     [saveProfile],
   );
@@ -463,10 +474,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       buyItem,
       equipItem,
       spendMirror,
+      addCoins,
       setRank,
       setPicked,
     }),
-    [profile, settings, loaded, game, result, lastResult, startGame, setGame, finishGame, buyPartner, setFavourite, updateSettings, markTutorialDone, resetAll, buyItem, equipItem, spendMirror, setRank, setPicked],
+    [profile, settings, loaded, game, result, lastResult, startGame, setGame, finishGame, buyPartner, setFavourite, updateSettings, markTutorialDone, resetAll, buyItem, equipItem, spendMirror, addCoins, setRank, setPicked],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
